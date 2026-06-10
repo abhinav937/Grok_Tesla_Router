@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getGrokClient } from '@/lib/grok'
 import { z } from 'zod'
 
@@ -14,7 +14,7 @@ const TripPlanSchema = z.object({
       detour_minutes: z.number(),
     })
   ),
-  ev_notes: z.array(z.string()),
+  trip_notes: z.array(z.string()),
   total_estimated_hours: z.number(),
 })
 
@@ -22,26 +22,20 @@ const planTripTool = {
   type: 'function' as const,
   function: {
     name: 'plan_road_trip',
-    description: 'Return a structured road trip plan with ordered stops for a Tesla EV.',
+    description: 'Return a structured road trip plan with ordered stops.',
     parameters: {
       type: 'object',
-      required: ['origin', 'destination', 'waypoints', 'ev_notes', 'total_estimated_hours'],
+      required: ['origin', 'destination', 'waypoints', 'trip_notes', 'total_estimated_hours'],
       properties: {
         origin: {
           type: 'object',
           required: ['name', 'address'],
-          properties: {
-            name: { type: 'string' },
-            address: { type: 'string' },
-          },
+          properties: { name: { type: 'string' }, address: { type: 'string' } },
         },
         destination: {
           type: 'object',
           required: ['name', 'address'],
-          properties: {
-            name: { type: 'string' },
-            address: { type: 'string' },
-          },
+          properties: { name: { type: 'string' }, address: { type: 'string' } },
         },
         waypoints: {
           type: 'array',
@@ -51,85 +45,153 @@ const planTripTool = {
             properties: {
               name: { type: 'string' },
               address: { type: 'string' },
-              type: {
-                type: 'string',
-                enum: ['food', 'charging', 'scenic', 'rest', 'attraction'],
-              },
+              type: { type: 'string', enum: ['food', 'charging', 'scenic', 'rest', 'attraction'] },
               reason: { type: 'string' },
               detour_minutes: { type: 'number' },
             },
           },
         },
-        ev_notes: { type: 'array', items: { type: 'string' } },
+        trip_notes: { type: 'array', items: { type: 'string' } },
         total_estimated_hours: { type: 'number' },
       },
     },
   },
 }
 
-const SYSTEM_PROMPT = `You are an expert EV road trip planner specializing in Tesla Model 3 Long Range (82 kWh usable, ~300 mile range at 80% charge).
-Parse the user's trip request and call plan_road_trip with a structured plan.
+const SYSTEM_PROMPT = `You are an expert road trip planner. Parse the user's trip request and call plan_road_trip.
 
 Rules:
-- Provide full, geocodable US addresses (minimum "City, State" format, full street address preferred for specific venues)
+- Provide full, geocodable US addresses ("City, State" minimum, full street address for specific venues)
 - Order waypoints geographically to minimize backtracking
-- For trips where any single leg exceeds 220 miles, add a charging stop (type: "charging") before that leg
-- Include 3-8 stops for long trips, keeping each drive segment under 3 hours
-- ev_notes should include practical Tesla tips: charging strategy, optimal departure time, supercharger locations
-- detour_minutes is the extra time added by detouring to this stop (0 if it's on the main route)`
+- Include 2-6 stops that genuinely add value (food, attractions, scenery, rest)
+- detour_minutes is the extra time for detouring to this stop (0 if on the main route)
+- trip_notes: 2-4 practical tips about timing, traffic, highlights, or must-sees along the way`
+
+type StreamEvent =
+  | { type: 'thinking'; text: string }
+  | { type: 'tool_call'; origin: string; destination: string; waypoint_count: number }
+  | { type: 'result'; data: z.infer<typeof TripPlanSchema> }
+  | { type: 'usage'; data: { prompt_tokens: number; completion_tokens: number; reasoning_tokens?: number; total_tokens: number; duration_ms: number } }
+  | { type: 'error'; error: string }
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json()
-    const { prompt, preferences } = body
+  const encoder = new TextEncoder()
 
-    if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 5) {
-      return NextResponse.json({ error: 'A trip description is required' }, { status: 400 })
-    }
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (event: StreamEvent) => {
+        controller.enqueue(encoder.encode(JSON.stringify(event) + '\n'))
+      }
 
-    const systemContent = preferences
-      ? `${SYSTEM_PROMPT}\n\nUser preferences: ${JSON.stringify(preferences)}`
-      : SYSTEM_PROMPT
+      const startMs = Date.now()
 
-    const grok = getGrokClient()
-    const response = await grok.chat.completions.create({
-      model: process.env.XAI_MODEL ?? 'grok-3-mini',
-      messages: [
-        { role: 'system', content: systemContent },
-        { role: 'user', content: prompt.trim() },
-      ],
-      tools: [planTripTool],
-      tool_choice: { type: 'function', function: { name: 'plan_road_trip' } },
-      temperature: 0.3,
-    })
+      try {
+        const { prompt } = await req.json()
 
-    const toolCall = response.choices[0]?.message?.tool_calls?.[0]
-    if (!toolCall || toolCall.function.name !== 'plan_road_trip') {
-      return NextResponse.json(
-        { error: 'AI did not return a structured plan. Please try rephrasing your request.' },
-        { status: 502 }
-      )
-    }
+        if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 5) {
+          send({ type: 'error', error: 'A trip description is required' })
+          controller.close()
+          return
+        }
 
-    let rawArgs: unknown
-    try {
-      rawArgs = JSON.parse(toolCall.function.arguments)
-    } catch {
-      return NextResponse.json({ error: 'AI returned malformed data' }, { status: 502 })
-    }
+        const grok = getGrokClient()
 
-    const parsed = TripPlanSchema.safeParse(rawArgs)
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'AI response failed validation', details: parsed.error.flatten() },
-        { status: 502 }
-      )
-    }
+        // reasoning_effort is an xAI extension, not in the OpenAI SDK types
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const grokStream = await (grok.chat.completions.create as any)({
+          model: process.env.XAI_MODEL ?? 'grok-3-mini',
+          reasoning_effort: 'high',
+          stream: true,
+          stream_options: { include_usage: true },
+          temperature: 0.3,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: prompt.trim() },
+          ],
+          tools: [planTripTool],
+          tool_choice: { type: 'function', function: { name: 'plan_road_trip' } },
+        })
 
-    return NextResponse.json(parsed.data)
-  } catch (err) {
-    console.error('[plan-trip]', err)
-    const message = err instanceof Error ? err.message : 'Internal server error'
-    return NextResponse.json({ error: message }, { status: 500 })
-  }
+        let toolArgsBuffer = ''
+        let usageData: Record<string, number> | null = null
+
+        for await (const chunk of grokStream) {
+          // xAI-specific delta fields
+          const delta = (chunk.choices?.[0]?.delta ?? {}) as {
+            reasoning_content?: string
+            tool_calls?: Array<{ index: number; function?: { arguments?: string } }>
+          }
+
+          if (delta.reasoning_content) {
+            send({ type: 'thinking', text: delta.reasoning_content })
+          }
+
+          if (delta.tool_calls?.[0]?.function?.arguments) {
+            toolArgsBuffer += delta.tool_calls[0].function.arguments
+          }
+
+          if (chunk.usage) {
+            usageData = chunk.usage as Record<string, number>
+          }
+        }
+
+        if (!toolArgsBuffer) {
+          send({ type: 'error', error: 'Model did not return a plan. Try rephrasing.' })
+          controller.close()
+          return
+        }
+
+        let rawArgs: unknown
+        try {
+          rawArgs = JSON.parse(toolArgsBuffer)
+        } catch {
+          send({ type: 'error', error: 'AI returned malformed data' })
+          controller.close()
+          return
+        }
+
+        const parsed = TripPlanSchema.safeParse(rawArgs)
+        if (!parsed.success) {
+          send({ type: 'error', error: 'Plan validation failed — try again' })
+          controller.close()
+          return
+        }
+
+        send({
+          type: 'tool_call',
+          origin: parsed.data.origin.name,
+          destination: parsed.data.destination.name,
+          waypoint_count: parsed.data.waypoints.length,
+        })
+
+        send({ type: 'result', data: parsed.data })
+
+        if (usageData) {
+          send({
+            type: 'usage',
+            data: {
+              prompt_tokens: usageData.prompt_tokens ?? 0,
+              completion_tokens: usageData.completion_tokens ?? 0,
+              reasoning_tokens: usageData.reasoning_tokens,
+              total_tokens: usageData.total_tokens ?? 0,
+              duration_ms: Date.now() - startMs,
+            },
+          })
+        }
+      } catch (err) {
+        console.error('[plan-trip]', err)
+        send({ type: 'error', error: err instanceof Error ? err.message : 'Internal server error' })
+      }
+
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'application/x-ndjson',
+      'Cache-Control': 'no-cache',
+      'X-Accel-Buffering': 'no',
+    },
+  })
 }

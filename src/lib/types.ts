@@ -17,7 +17,7 @@ export interface TripPlan {
   origin: TripEndpoint
   destination: TripEndpoint
   waypoints: TripStop[]
-  ev_notes: string[]
+  trip_notes: string[]
   total_estimated_hours: number
 }
 
@@ -39,19 +39,25 @@ export interface DirectionsResult {
   waypoint_order: number[]
 }
 
-export interface LegBatteryEstimate {
-  distance_miles: number
-  estimated_kwh: number
-  soc_delta_percent: number
-  cumulative_soc_after: number
-  needs_charging_before: boolean
-  warn_low_battery: boolean
+export interface TripPlanUsage {
+  prompt_tokens: number
+  completion_tokens: number
+  reasoning_tokens?: number
+  total_tokens: number
+  duration_ms: number
 }
 
-export interface TripBatteryPlan {
-  legs: LegBatteryEstimate[]
-  starting_soc: number
-  ending_soc: number
-  total_distance_miles: number
-  charging_stops_recommended: number[]
+export interface TripPlanToolCall {
+  origin: string
+  destination: string
+  waypoint_count: number
+}
+
+export interface TripPlanState {
+  status: 'idle' | 'thinking' | 'success' | 'error'
+  thinking: string
+  toolCall: TripPlanToolCall | null
+  plan: TripPlan | null
+  usage: TripPlanUsage | null
+  error: string | null
 }

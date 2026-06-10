@@ -1,7 +1,8 @@
 'use client'
+import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Utensils, Zap, Camera, Coffee, Star, MapPin } from 'lucide-react'
-import type { TripStop, TripEndpoint, RouteLeg, LegBatteryEstimate } from '@/lib/types'
+import { Utensils, Zap, Camera, Coffee, Star, MapPin, ImageOff } from 'lucide-react'
+import type { TripStop, TripEndpoint, RouteLeg } from '@/lib/types'
 
 type StopInfo = TripStop | (TripEndpoint & { type?: undefined; reason?: undefined; detour_minutes?: undefined })
 
@@ -14,16 +15,42 @@ const STOP_CONFIG = {
   endpoint: { icon: MapPin, label: '', className: 'bg-[#CC0000]/20 text-[#CC0000] border-[#CC0000]/30' },
 } as const
 
+function StreetView({ lat, lng }: { lat: number; lng: number }) {
+  const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
+  const src = `/api/streetview?lat=${lat}&lng=${lng}&size=600x200`
+
+  return (
+    <div className="mt-2 rounded-md overflow-hidden bg-secondary aspect-[3/1] relative">
+      {status === 'loading' && (
+        <div className="absolute inset-0 animate-pulse bg-secondary" />
+      )}
+      {status === 'error' && (
+        <div className="absolute inset-0 flex items-center justify-center gap-1.5 text-muted-foreground">
+          <ImageOff className="w-4 h-4" />
+          <span className="text-xs">No street view</span>
+        </div>
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt="Street view"
+        className={`w-full h-full object-cover transition-opacity duration-300 ${status === 'loaded' ? 'opacity-100' : 'opacity-0'}`}
+        onLoad={() => setStatus('loaded')}
+        onError={() => setStatus('error')}
+      />
+    </div>
+  )
+}
+
 interface Props {
   index: number
   stop: StopInfo
   legAfter: RouteLeg | null
-  battery: LegBatteryEstimate | null
-  totalStops: number
+  location: { lat: number; lng: number } | null
   isLast: boolean
 }
 
-export function StopCard({ index, stop, legAfter, battery, totalStops, isLast }: Props) {
+export function StopCard({ index, stop, legAfter, location, isLast }: Props) {
   const stopType = (stop as TripStop).type
   const config = stopType ? STOP_CONFIG[stopType] : STOP_CONFIG.endpoint
   const Icon = config.icon
@@ -33,7 +60,7 @@ export function StopCard({ index, stop, legAfter, battery, totalStops, isLast }:
   return (
     <div className="relative flex gap-3">
       <div className="flex flex-col items-center shrink-0">
-        <div className="w-8 h-8 rounded-full bg-[#CC0000] flex items-center justify-center text-xs font-bold text-white z-10">
+        <div className="w-8 h-8 rounded-full bg-[#CC0000] flex items-center justify-center text-xs font-bold text-white z-10 shrink-0">
           {label}
         </div>
         {!isLast && (
@@ -41,14 +68,14 @@ export function StopCard({ index, stop, legAfter, battery, totalStops, isLast }:
         )}
       </div>
 
-      <div className={`flex-1 ${isLast ? 'pb-0' : 'pb-3'}`}>
+      <div className={`flex-1 min-w-0 ${isLast ? 'pb-0' : 'pb-4'}`}>
         <div className="flex items-start justify-between gap-2 mb-1">
           <div className="min-w-0">
             <p className="text-sm font-medium leading-tight">{stop.name}</p>
             <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{stop.address}</p>
           </div>
           {isEndpoint ? (
-            <Badge className={`text-xs shrink-0 ${config.className}`}>
+            <Badge className={`text-xs shrink-0 border ${config.className}`}>
               {index === 0 ? 'Start' : 'End'}
             </Badge>
           ) : (
@@ -60,7 +87,7 @@ export function StopCard({ index, stop, legAfter, battery, totalStops, isLast }:
         </div>
 
         {(stop as TripStop).reason && (
-          <p className="text-xs text-muted-foreground italic mt-1">
+          <p className="text-xs text-muted-foreground italic mt-0.5 leading-snug">
             {(stop as TripStop).reason}
           </p>
         )}
@@ -71,23 +98,18 @@ export function StopCard({ index, stop, legAfter, battery, totalStops, isLast }:
           </p>
         )}
 
+        {/* Street View preview */}
+        {location && <StreetView lat={location.lat} lng={location.lng} />}
+
         {legAfter && (
           <div className="mt-2 pt-2 border-t border-border/40 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
             <span className="font-medium text-foreground/80">{legAfter.distance.text}</span>
             <span>·</span>
             <span>{legAfter.duration.text}</span>
-            {battery && (
+            {legAfter.summary && (
               <>
                 <span>·</span>
-                <span className={battery.warn_low_battery ? 'text-yellow-400 font-medium' : ''}>
-                  −{battery.soc_delta_percent}% SOC
-                </span>
-                {battery.warn_low_battery && (
-                  <span className="text-yellow-400">⚡ low battery warning</span>
-                )}
-                {battery.needs_charging_before && (
-                  <span className="text-red-400 font-medium">⚡ charge before this leg</span>
-                )}
+                <span className="truncate max-w-[140px]">via {legAfter.summary}</span>
               </>
             )}
           </div>
