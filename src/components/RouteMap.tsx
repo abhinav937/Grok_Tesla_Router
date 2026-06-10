@@ -41,14 +41,14 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
   { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4b5563' }] },
 ]
 
-const ACCENT = '#3CE0C4' // design system electric cyan
+const ACCENT = 'var(--accent)'
 
 const STOP_COLORS: Record<StopType | 'endpoint', string> = {
-  food: '#FB923C',
-  charging: '#4ADE80',
-  scenic: '#38BDF8',
-  rest: '#A78BFA',
-  attraction: '#FBBF24',
+  food: 'var(--stop-food)',
+  charging: 'var(--stop-charging)',
+  scenic: 'var(--stop-scenic)',
+  rest: 'var(--stop-rest)',
+  attraction: 'var(--stop-attraction)',
   endpoint: ACCENT,
 }
 
@@ -76,7 +76,7 @@ function RoutePolylines({ directions }: RoutePolylinesProps) {
 
     // Subtle outer glow for premium Tesla feel
     const glow = new google.maps.Polyline({
-      strokeColor: ACCENT,
+      strokeColor: '#3CE0C4',
       strokeOpacity: 0.18,
       strokeWeight: 13,
       geodesic: true,
@@ -94,7 +94,7 @@ function RoutePolylines({ directions }: RoutePolylinesProps) {
     })
     // Main Tesla blue line
     const line = new google.maps.Polyline({
-      strokeColor: ACCENT,
+      strokeColor: '#3CE0C4',
       strokeOpacity: 1,
       strokeWeight: 5,
       geodesic: true,
@@ -333,34 +333,29 @@ export function RouteMap({ plan, directions, isLoading, highlightedStop, onHighl
         />
       </Map>
 
-      {/* Map type toggle + mini type legend */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
+      <div className="map-controls">
         <button
+          type="button"
           onClick={() => setMapType(t => t === 'roadmap' ? 'satellite' : 'roadmap')}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-tesla-panel/90 text-white/70 text-sm font-medium hover:bg-tesla-card/90 hover:text-white transition-colors shadow-float backdrop-blur-sm border border-white/10"
+          className={`mapctl ${mapType === 'satellite' ? 'on' : ''}`}
+          title={mapType === 'roadmap' ? 'Switch to satellite' : 'Switch to map'}
+          aria-label={mapType === 'roadmap' ? 'Switch to satellite view' : 'Switch to map view'}
         >
-          {mapType === 'roadmap'
-            ? <><Layers className="w-4 h-4" /> Satellite</>
-            : <><MapIcon className="w-4 h-4" /> Map</>
-          }
+          {mapType === 'roadmap' ? <Layers className="w-4 h-4" /> : <MapIcon className="w-4 h-4" />}
         </button>
-
-        {/* Tiny stop type legend (matches map pins + cards) */}
-        <div className="hidden md:flex items-center gap-1 rounded-lg bg-tesla-panel/90 border border-white/10 px-2 py-1 text-[10px] text-white/50 backdrop-blur-sm shadow-float">
-          {Object.entries(STOP_COLORS).filter(([k]) => k !== 'endpoint').map(([type, color]) => (
-            <div key={type} className="flex items-center gap-1" title={type}>
-              <span className="inline-block w-2 h-2 rounded-full" style={{ background: color }} />
-            </div>
-          ))}
-        </div>
       </div>
 
-      {/* Route calculating overlay */}
       {isLoading && (
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
-          <div className="flex flex-col items-center gap-3 px-6 py-4 rounded-2xl bg-[#111215]/95 border border-white/10 shadow-float">
-            <div className="w-9 h-9 rounded-full border-[3px] border-[#4DA6FF]/30 border-t-[#4DA6FF] animate-spin" />
-            <p className="text-sm text-white/50">Calculating route…</p>
+        <div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+          style={{ background: 'var(--surface-overlay)', backdropFilter: 'blur(2px)' }}
+        >
+          <div className="route-flash" style={{ position: 'relative', top: 0, left: 0, transform: 'none' }}>
+            <div
+              className="w-4 h-4 rounded-full border-2 animate-spin"
+              style={{ borderColor: 'color-mix(in srgb, var(--accent) 30%, transparent)', borderTopColor: 'var(--accent)' }}
+            />
+            Calculating route…
           </div>
         </div>
       )}

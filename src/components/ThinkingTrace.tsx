@@ -59,7 +59,9 @@ export function ThinkingTrace({ thinking, isThinking, toolCall, usage }: Props) 
         <span className="trace-meta mono">
           {(usage?.total_tokens || 0).toLocaleString()} tokens · {((usage?.duration_ms || 0) / 1000).toFixed(1)}s
         </span>
-        {expanded ? <ChevronUp className="w-3.5 h-3.5 text-white/25" /> : <ChevronDown className="w-3.5 h-3.5 text-white/25" />}
+        {expanded
+          ? <ChevronUp className="w-3.5 h-3.5" style={{ color: 'var(--text-subtle)' }} />
+          : <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--text-subtle)' }} />}
       </button>
 
       {expanded && (

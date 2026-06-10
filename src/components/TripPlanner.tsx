@@ -48,7 +48,7 @@ export function TripPlanner() {
         {/* Left overlay panel */}
         <div
           className={cn(
-            'absolute left-0 top-0 bottom-0 w-[420px] z-20',
+            'panel-wrap',
             'transition-transform duration-500 ease-panel',
             panelOpen ? 'translate-x-0' : '-translate-x-full'
           )}
@@ -71,8 +71,10 @@ export function TripPlanner() {
         {/* Reopen panel tab */}
         {!panelOpen && hasTrip && (
           <button
+            type="button"
             onClick={() => setPanelOpen(true)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-6 h-14 bg-[#111215]/90 border border-white/10 border-l-0 rounded-r-lg text-white/50 hover:text-white hover:bg-[#1A1B1F]/90 transition-colors backdrop-blur-sm"
+            className="panel-reopen"
+            aria-label="Open trip panel"
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </button>

@@ -48,7 +48,6 @@ export function NaturalLanguageInput({ onSubmit, isLoading, error, onReset }: Pr
             onChange={e => setPrompt(e.target.value)}
             placeholder={EXAMPLES[placeholderIdx]}
             rows={2}
-            className="w-full bg-transparent border-0 outline-none resize-none text-[14px] text-white placeholder:text-white/20 leading-relaxed"
             disabled={isLoading}
             onKeyDown={e => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -76,10 +75,21 @@ export function NaturalLanguageInput({ onSubmit, isLoading, error, onReset }: Pr
 
         {/* Error */}
         {error && (
-          <div className="mt-3 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between gap-2 text-[12px] text-red-400">
+          <div
+            className="mt-3 px-3 py-2 rounded-xl flex items-center justify-between gap-2 text-[12px]"
+            style={{
+              background: 'rgba(232, 33, 39, 0.12)',
+              border: '1px solid rgba(232, 33, 39, 0.28)',
+              color: '#ff8a8e',
+            }}
+          >
             <span>{error}</span>
             {onReset && (
-              <button type="button" onClick={onReset} className="text-white/30 hover:text-white/60">
+              <button
+                type="button"
+                onClick={onReset}
+                className="text-[var(--text-subtle)] hover:text-[var(--text-primary)]"
+              >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}

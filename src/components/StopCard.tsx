@@ -149,7 +149,7 @@ export function StopCard({
 
         {/* Cumulatives (subtle) */}
         {(cumulativeDistance || cumulativeDuration) && (
-          <div className="text-[10px] text-white/25 tabular-nums mt-1 mono">
+          <div className="text-[10px] tabular-nums mt-1 mono" style={{ color: 'var(--text-subtle)' }}>
             from start: {cumulativeDistance} {cumulativeDuration ? `· ${cumulativeDuration}` : ''}
           </div>
         )}

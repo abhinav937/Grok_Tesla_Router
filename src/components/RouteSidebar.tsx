@@ -148,8 +148,8 @@ export function RouteSidebar({
               {[150, 180, 150, 120].map((h, i) => (
                 <div
                   key={i}
-                  className="rounded-xl bg-white/[0.04] animate-pulse"
-                  style={{ height: h }}
+                  className="rounded-xl animate-pulse"
+                  style={{ height: h, background: 'var(--surface-raised)' }}
                 />
               ))}
             </div>
@@ -188,16 +188,16 @@ export function RouteSidebar({
                     <div key={i}>
                       {dayBreak && (
                         <div className="flex items-center gap-2 py-1.5">
-                          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--accent-tint)] border border-[color-mix(in_srgb,var(--accent)_22%,transparent)] text-[var(--accent)]">
+                          <div className="summary-days">
                             <Sunrise className="w-3 h-3 shrink-0" />
                             <span className="text-[10px] font-semibold tracking-wider">DAY {dayBreak.dayNum}</span>
                             {dayBreak.dayDurationSeconds > 0 && (
-                              <span className="text-[10px] text-[var(--accent)]/50 tabular-nums">
+                              <span className="text-[10px] tabular-nums" style={{ color: 'var(--text-muted)' }}>
                                 ~{formatDuration(dayBreak.dayDurationSeconds)}
                               </span>
                             )}
                           </div>
-                          <div className="flex-1 h-px bg-white/[0.06]" />
+                          <div className="flex-1 h-px" style={{ background: 'var(--border-subtle)' }} />
                         </div>
                       )}
                       <div className={i < allStops.length - 1 ? 'mb-2.5' : ''}>
