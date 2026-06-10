@@ -33,7 +33,7 @@ export function TripPlanner() {
 
   return (
     <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ''}>
-      <div className="relative h-[100dvh] w-full overflow-hidden bg-[#0D0E11]">
+      <div className="relative h-[100dvh] w-full overflow-hidden bg-tesla-dark">
         {/* Full-screen map */}
         <div className="absolute inset-0">
           <RouteMap
@@ -41,7 +41,7 @@ export function TripPlanner() {
             directions={directionsQuery.data ?? null}
             isLoading={directionsQuery.isFetching}
             highlightedStop={highlightedStop}
-            onHighlightClear={() => setHighlightedStop(null)}
+            onHighlight={(index) => setHighlightedStop(index)}
           />
         </div>
 
@@ -61,7 +61,9 @@ export function TripPlanner() {
             usage={trip.usage}
             directions={directionsQuery.data ?? null}
             isLoading={directionsQuery.isFetching}
+            highlightedStop={highlightedStop}
             onPreviewStop={setHighlightedStop}
+            onHoverStop={setHighlightedStop}
             onNewTrip={handleReset}
           />
         </div>

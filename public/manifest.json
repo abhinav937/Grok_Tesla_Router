@@ -4,8 +4,8 @@
   "description": "AI-powered road trip planner with a Google Maps experience",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#1a73e8",
+  "background_color": "#0D0E11",
+  "theme_color": "#0D0E11",
   "orientation": "any",
   "icons": [
     {

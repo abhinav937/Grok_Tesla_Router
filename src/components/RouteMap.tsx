@@ -1,8 +1,25 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { Map, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
+import {
+  Map,
+  useMap,
+  useMapsLibrary,
+  AdvancedMarker,
+  InfoWindow,
+  useAdvancedMarkerRef,
+  CollisionBehavior,
+} from '@vis.gl/react-google-maps'
 import { Layers, Map as MapIcon } from 'lucide-react'
-import type { TripPlan, DirectionsResult } from '@/lib/types'
+import type { TripPlan, DirectionsResult, StopType } from '@/lib/types'
+
+// Map ID is required for Advanced Markers (latest recommended API) and vector/cloud styling.
+// Create one in Google Cloud Console → Maps Platform → Map IDs.
+const MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || undefined
+
+if (typeof window !== 'undefined' && !MAP_ID) {
+  // eslint-disable-next-line no-console
+  console.warn('[RouteMap] NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID is not set. Advanced Markers and modern map styling require a Map ID. See README for setup.')
+}
 
 const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
   { elementType: 'geometry', stylers: [{ color: '#1d2330' }] },
@@ -26,67 +43,26 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
 
 const TESLA_BLUE = '#4DA6FF'
 
-function buildInfoWindowContent(stop: {
-  label: string; name: string; address: string; type: string; reason?: string
-}) {
-  const isEndpoint = stop.type === 'Start' || stop.type === 'End'
-  const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.address)}`
-
-  return `
-    <div style="color:#111215;min-width:200px;max-width:260px;
-                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-                padding:2px 0 4px;">
-      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;">
-        <div style="background:${TESLA_BLUE};color:#000;border-radius:50%;
-                    width:24px;height:24px;min-width:24px;
-                    display:flex;align-items:center;justify-content:center;
-                    font-weight:700;font-size:11px;margin-top:1px;">
-          ${stop.label}
-        </div>
-        <div style="min-width:0;flex:1;">
-          <p style="margin:0 0 3px;font-weight:600;font-size:14px;line-height:1.3;color:#111215;">
-            ${stop.name}
-          </p>
-          ${isEndpoint
-            ? `<span style="font-size:12px;color:#6b7280;">${stop.type}</span>`
-            : `<span style="display:inline-block;padding:1px 8px;border-radius:99px;
-                            background:rgba(77,166,255,0.12);font-size:11px;color:${TESLA_BLUE};
-                            border:1px solid rgba(77,166,255,0.3);text-transform:capitalize;">
-                 ${stop.type}
-               </span>`
-          }
-        </div>
-      </div>
-      <p style="margin:0 0 6px;font-size:12px;color:#6b7280;line-height:1.4;">
-        ${stop.address}
-      </p>
-      ${stop.reason
-        ? `<p style="margin:0 0 10px;font-size:12px;color:#374151;line-height:1.4;">${stop.reason}</p>`
-        : '<div style="margin-bottom:8px;"></div>'
-      }
-      <a href="${mapsLink}" target="_blank" rel="noopener noreferrer"
-         style="color:${TESLA_BLUE};font-size:13px;text-decoration:none;font-weight:600;">
-        Open in Maps →
-      </a>
-    </div>`
+const STOP_COLORS: Record<StopType | 'endpoint', string> = {
+  food: '#FB923C',
+  charging: '#4ADE80',
+  scenic: '#38BDF8',
+  rest: '#A78BFA',
+  attraction: '#FBBF24',
+  endpoint: TESLA_BLUE,
 }
 
-interface MapOverlaysProps {
-  plan: TripPlan | null
+interface RoutePolylinesProps {
   directions: DirectionsResult | null
-  highlightedStop: number | null
-  onHighlightClear: () => void
 }
 
-function MapOverlays({ plan, directions, highlightedStop, onHighlightClear }: MapOverlaysProps) {
+function RoutePolylines({ directions }: RoutePolylinesProps) {
   const map = useMap()
   const geometryLib = useMapsLibrary('geometry')
-  const markersRef = useRef<google.maps.Marker[]>([])
   const casingRef = useRef<google.maps.Polyline | null>(null)
   const lineRef = useRef<google.maps.Polyline | null>(null)
-  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null)
+  const glowRef = useRef<google.maps.Polyline | null>(null)
   const animFrameRef = useRef<number>(0)
-  const allStopsRef = useRef<Array<{ position: google.maps.LatLng | google.maps.LatLngLiteral; infoContent: string }>>([])
 
   useEffect(() => {
     if (!map || !geometryLib || !directions?.overview_polyline) return
@@ -94,17 +70,29 @@ function MapOverlays({ plan, directions, highlightedStop, onHighlightClear }: Ma
     cancelAnimationFrame(animFrameRef.current)
     casingRef.current?.setMap(null)
     lineRef.current?.setMap(null)
+    glowRef.current?.setMap(null)
 
     const fullPath = geometryLib.encoding.decodePath(directions.overview_polyline)
 
+    // Subtle outer glow for premium Tesla feel
+    const glow = new google.maps.Polyline({
+      strokeColor: TESLA_BLUE,
+      strokeOpacity: 0.18,
+      strokeWeight: 13,
+      geodesic: true,
+      zIndex: 0,
+      map,
+    })
+    // Dark casing
     const casing = new google.maps.Polyline({
-      strokeColor: 'rgba(0,0,0,0.4)',
+      strokeColor: 'rgba(0,0,0,0.55)',
       strokeOpacity: 1,
       strokeWeight: 9,
       geodesic: true,
       zIndex: 1,
       map,
     })
+    // Main Tesla blue line
     const line = new google.maps.Polyline({
       strokeColor: TESLA_BLUE,
       strokeOpacity: 1,
@@ -113,15 +101,18 @@ function MapOverlays({ plan, directions, highlightedStop, onHighlightClear }: Ma
       zIndex: 2,
       map,
     })
+
+    glowRef.current = glow
     casingRef.current = casing
     lineRef.current = line
 
-    const DURATION = 1400
+    const DURATION = 1350
     const start = performance.now()
     const animate = (now: number) => {
       const t = Math.min((now - start) / DURATION, 1)
-      const eased = 1 - Math.pow(1 - t, 3)
+      const eased = 1 - Math.pow(1 - t, 3.0)
       const slice = fullPath.slice(0, Math.max(2, Math.round(eased * fullPath.length)))
+      glow.setPath(slice)
       casing.setPath(slice)
       line.setPath(slice)
       if (t < 1) animFrameRef.current = requestAnimationFrame(animate)
@@ -134,107 +125,173 @@ function MapOverlays({ plan, directions, highlightedStop, onHighlightClear }: Ma
 
     return () => {
       cancelAnimationFrame(animFrameRef.current)
+      glowRef.current?.setMap(null)
       casingRef.current?.setMap(null)
       lineRef.current?.setMap(null)
+      glowRef.current = null
       casingRef.current = null
       lineRef.current = null
     }
   }, [map, geometryLib, directions?.overview_polyline])
 
-  useEffect(() => {
-    if (!map || !directions?.legs.length || !plan) return
-
-    markersRef.current.forEach(m => m.setMap(null))
-    markersRef.current = []
-    infoWindowRef.current?.close()
-
-    const infoWindow = new google.maps.InfoWindow({ disableAutoPan: false })
-    infoWindowRef.current = infoWindow
-
-    const legs = directions.legs
-    const stopsData = [
-      {
-        label: 'A', name: plan.origin.name, address: plan.origin.address,
-        type: 'Start', reason: undefined,
-        position: legs[0].start_location,
-      },
-      ...legs.slice(0, -1).map((leg, i) => ({
-        label: String.fromCharCode(66 + i),
-        name: plan.waypoints[i]?.name ?? leg.end_address,
-        address: plan.waypoints[i]?.address ?? leg.end_address,
-        type: plan.waypoints[i]?.type ?? 'stop',
-        reason: plan.waypoints[i]?.reason,
-        position: leg.end_location,
-      })),
-      {
-        label: String.fromCharCode(65 + legs.length),
-        name: plan.destination.name, address: plan.destination.address,
-        type: 'End', reason: undefined,
-        position: legs[legs.length - 1].end_location,
-      },
-    ]
-
-    allStopsRef.current = stopsData.map(s => ({
-      position: s.position,
-      infoContent: buildInfoWindowContent(s),
-    }))
-
-    map.addListener('click', () => {
-      infoWindow.close()
-      onHighlightClear()
-    })
-
-    markersRef.current = stopsData.map((stop, idx) => {
-      const isEndpoint = stop.type === 'Start' || stop.type === 'End'
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
-        <filter id="ds"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="rgba(0,0,0,0.6)"/></filter>
-        <path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 26 16 26s16-14 16-26C32 7.16 24.84 0 16 0z"
-          fill="${TESLA_BLUE}" filter="url(#ds)"/>
-        <circle cx="16" cy="15.5" r="10" fill="${isEndpoint ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.2)'}"/>
-        <text x="16" y="20" text-anchor="middle" fill="#000"
-          font-family="-apple-system,sans-serif" font-size="12" font-weight="700">${stop.label}</text>
-      </svg>`
-
-      const marker = new google.maps.Marker({
-        position: stop.position,
-        map,
-        title: stop.name,
-        icon: {
-          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-          scaledSize: new google.maps.Size(32, 42),
-          anchor: new google.maps.Point(16, 42),
-        },
-        zIndex: isEndpoint ? 20 : 10,
-      })
-
-      marker.addListener('click', () => {
-        infoWindow.setContent(allStopsRef.current[idx].infoContent)
-        infoWindow.open(map, marker)
-      })
-
-      return marker
-    })
-
-    return () => {
-      markersRef.current.forEach(m => m.setMap(null))
-      markersRef.current = []
-      infoWindow.close()
-      google.maps.event.clearListeners(map, 'click')
-    }
-  }, [map, directions?.legs, plan, onHighlightClear])
-
-  useEffect(() => {
-    if (highlightedStop == null || !map) return
-    const marker = markersRef.current[highlightedStop]
-    const stopData = allStopsRef.current[highlightedStop]
-    if (marker && stopData && infoWindowRef.current) {
-      infoWindowRef.current.setContent(stopData.infoContent)
-      infoWindowRef.current.open(map, marker)
-      map.panTo(marker.getPosition()!)
-    }
-  }, [highlightedStop, map])
-
   return null
+}
+
+interface RouteMarkersProps {
+  plan: TripPlan | null
+  directions: DirectionsResult | null
+  highlightedStop: number | null
+  onHighlight: (index: number | null) => void
+}
+
+function RouteMarkers({ plan, directions, highlightedStop, onHighlight }: RouteMarkersProps) {
+  const legs = directions?.legs ?? []
+  if (!plan || legs.length === 0) return null
+
+  // Build ordered stops (A = origin, B... = waypoints, last = destination)
+  const stops = [
+    {
+      index: 0,
+      label: 'A',
+      name: plan.origin.name,
+      address: plan.origin.address,
+      type: 'endpoint' as const,
+      reason: undefined as string | undefined,
+      position: legs[0].start_location,
+      color: STOP_COLORS.endpoint,
+    },
+    ...legs.slice(0, -1).map((leg, i) => {
+      const wp = plan.waypoints[i]
+      const t = (wp?.type ?? 'attraction') as StopType
+      return {
+        index: i + 1,
+        label: String.fromCharCode(66 + i),
+        name: wp?.name ?? leg.end_address,
+        address: wp?.address ?? leg.end_address,
+        type: t,
+        reason: wp?.reason,
+        position: leg.end_location,
+        color: STOP_COLORS[t] ?? STOP_COLORS.endpoint,
+      }
+    }),
+    {
+      index: legs.length,
+      label: String.fromCharCode(65 + legs.length),
+      name: plan.destination.name,
+      address: plan.destination.address,
+      type: 'endpoint' as const,
+      reason: undefined as string | undefined,
+      position: legs[legs.length - 1].end_location,
+      color: STOP_COLORS.endpoint,
+    },
+  ]
+
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
+
+  // Sync external highlight (from sidebar) into local selected for InfoWindow
+  useEffect(() => {
+    if (highlightedStop != null) {
+      setSelectedIdx(highlightedStop)
+    }
+  }, [highlightedStop])
+
+  const selectedStop = selectedIdx != null ? stops[selectedIdx] : null
+
+  const openInfoFor = (idx: number, marker?: google.maps.marker.AdvancedMarkerElement) => {
+    setSelectedIdx(idx)
+    onHighlight(idx)
+    // If we have a marker ref we could anchor, but for simplicity we use position below
+  }
+
+  const closeInfo = () => {
+    setSelectedIdx(null)
+    onHighlight(null)
+  }
+
+  return (
+    <>
+      {stops.map((stop, idx) => {
+        const isHighlighted = highlightedStop === idx
+        const isEndpoint = stop.type === 'endpoint'
+
+        return (
+          <AdvancedMarker
+            key={idx}
+            position={stop.position}
+            zIndex={isEndpoint ? 200 : isHighlighted ? 150 : 100}
+            collisionBehavior={CollisionBehavior.REQUIRED_AND_HIDES_OPTIONAL}
+            onClick={() => openInfoFor(idx)}
+            title={stop.name}
+          >
+            {/* Custom numbered pin matching the sidebar letter badges */}
+            <div
+              className="flex items-center justify-center rounded-full text-[11px] font-bold shadow-md border border-black/30"
+              style={{
+                background: stop.color,
+                color: '#000',
+                width: isEndpoint || isHighlighted ? 28 : 24,
+                height: isEndpoint || isHighlighted ? 28 : 24,
+                transform: isHighlighted ? 'scale(1.08)' : 'scale(1)',
+                transition: 'transform 120ms ease-out',
+              }}
+            >
+              {stop.label}
+            </div>
+          </AdvancedMarker>
+        )
+      })}
+
+      {/* Nice declarative InfoWindow (dark themed, consistent with app) */}
+      {selectedStop && (
+        <InfoWindow
+          position={selectedStop.position}
+          onCloseClick={closeInfo}
+          maxWidth={260}
+        >
+          <div className="text-[#111215] min-w-[200px] max-w-[260px] font-sans text-sm">
+            <div className="flex items-start gap-2 mb-1.5">
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                style={{ background: selectedStop.color, color: '#000' }}
+              >
+                {selectedStop.label}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold text-[13px] leading-tight text-[#111215]">{selectedStop.name}</div>
+                {! (selectedStop.type === 'endpoint') && (
+                  <span
+                    className="inline-block mt-0.5 text-[10px] px-1.5 py-px rounded-full capitalize"
+                    style={{
+                      background: `${selectedStop.color}22`,
+                      color: selectedStop.color,
+                      border: `1px solid ${selectedStop.color}55`,
+                    }}
+                  >
+                    {selectedStop.type}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="text-[#6b7280] text-[11px] leading-snug mb-1.5">{selectedStop.address}</div>
+
+            {selectedStop.reason && (
+              <div className="text-[#374151] text-[11px] leading-snug mb-2">{selectedStop.reason}</div>
+            )}
+
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedStop.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#4DA6FF] text-[12px] font-semibold hover:underline"
+            >
+              Open in Maps →
+            </a>
+          </div>
+        </InfoWindow>
+      )}
+    </>
+  )
 }
 
 function MapTypeController({ mapType }: { mapType: string }) {
@@ -248,10 +305,10 @@ interface Props {
   directions: DirectionsResult | null
   isLoading: boolean
   highlightedStop: number | null
-  onHighlightClear: () => void
+  onHighlight: (index: number | null) => void
 }
 
-export function RouteMap({ plan, directions, isLoading, highlightedStop, onHighlightClear }: Props) {
+export function RouteMap({ plan, directions, isLoading, highlightedStop, onHighlight }: Props) {
   const [mapType, setMapType] = useState<'roadmap' | 'satellite'>('roadmap')
 
   return (
@@ -262,29 +319,40 @@ export function RouteMap({ plan, directions, isLoading, highlightedStop, onHighl
         gestureHandling="greedy"
         disableDefaultUI={true}
         zoomControl={true}
+        mapId={MAP_ID}
         styles={mapType === 'roadmap' ? DARK_MAP_STYLES : undefined}
         className="w-full h-full"
       >
         <MapTypeController mapType={mapType} />
-        <MapOverlays
+        <RoutePolylines directions={directions} />
+        <RouteMarkers
           plan={plan}
           directions={directions}
           highlightedStop={highlightedStop}
-          onHighlightClear={onHighlightClear}
+          onHighlight={onHighlight}
         />
       </Map>
 
-      {/* Map type toggle — top right, clear of the left panel */}
-      <div className="absolute top-4 right-4 z-10">
+      {/* Map type toggle + mini type legend */}
+      <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
         <button
           onClick={() => setMapType(t => t === 'roadmap' ? 'satellite' : 'roadmap')}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#111215]/90 text-white/70 text-sm font-medium hover:bg-[#1A1B1F]/90 hover:text-white transition-colors shadow-float backdrop-blur-sm border border-white/10"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-tesla-panel/90 text-white/70 text-sm font-medium hover:bg-tesla-card/90 hover:text-white transition-colors shadow-float backdrop-blur-sm border border-white/10"
         >
           {mapType === 'roadmap'
             ? <><Layers className="w-4 h-4" /> Satellite</>
             : <><MapIcon className="w-4 h-4" /> Map</>
           }
         </button>
+
+        {/* Tiny stop type legend (matches map pins + cards) */}
+        <div className="hidden md:flex items-center gap-1 rounded-lg bg-tesla-panel/90 border border-white/10 px-2 py-1 text-[10px] text-white/50 backdrop-blur-sm shadow-float">
+          {Object.entries(STOP_COLORS).filter(([k]) => k !== 'endpoint').map(([type, color]) => (
+            <div key={type} className="flex items-center gap-1" title={type}>
+              <span className="inline-block w-2 h-2 rounded-full" style={{ background: color }} />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Route calculating overlay */}

@@ -93,15 +93,28 @@ Go to [Google Cloud Console](https://console.cloud.google.com) → APIs & Servic
 - Application restriction: none (Vercel IPs vary)
 - API restriction: Directions API + Street View Static API only
 
+### Map ID (required for modern map markers & vector styling)
+
+Advanced Markers (the current recommended Google Maps marker API) and cloud-based vector map styling require a **Map ID**.
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com) → **Google Maps Platform** → **Map IDs**.
+2. Click **Create Map ID**.
+3. Name it (e.g. "Tesla Trip Planner") and choose **Map type** (usually **Roadmap** or **Vector**).
+4. (Recommended) Also create a custom style under **Map Styles** (Cloud-based styling) — a dark "Tesla" theme — then associate it with your Map ID.
+5. Copy the Map ID value (it looks like a long string or `gme-...` identifier).
+6. Add it as `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` in your `.env.local`.
+
+Without a Map ID the app will still load the map but you will not get the latest marker features and may see deprecation warnings for legacy markers.
+
 ## Deploy to Vercel
 
 ```bash
 vercel --prod
 ```
 
-Add the three environment variables in your Vercel project under **Settings → Environment Variables**, then redeploy.
+Add the four environment variables (`XAI_API_KEY`, the two Google Maps keys, and `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID`) in your Vercel project under **Settings → Environment Variables**, then redeploy.
 
-After deploying, add your `*.vercel.app` domain to the browser key's HTTP referrer restrictions in Google Cloud Console.
+After deploying, add your `*.vercel.app` domain to the browser key's HTTP referrer restrictions in Google Cloud Console. Also ensure your Map ID is set in the production environment variables.
 
 ## API Routes
 

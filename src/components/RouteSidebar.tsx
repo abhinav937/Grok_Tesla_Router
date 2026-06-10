@@ -53,11 +53,14 @@ interface Props {
   isLoading: boolean
   onPreviewStop: (index: number) => void
   onNewTrip: () => void
+  highlightedStop?: number | null
+  // Optional hover for map pin preview (re-uses the same setter for simplicity)
+  onHoverStop?: (index: number | null) => void
 }
 
 export function RouteSidebar({
   plan, thinking, isThinking, toolCall, usage,
-  directions, isLoading, onPreviewStop, onNewTrip,
+  directions, isLoading, onPreviewStop, onNewTrip, highlightedStop, onHoverStop,
 }: Props) {
   const showThinking = thinking || isThinking
 
@@ -79,6 +82,24 @@ export function RouteSidebar({
     },
   ] : []
 
+  // Compute cumulative distance/duration arriving at each stop (for richer cards)
+  const cumulativeForStop: Array<{ dist: string; dur: string }> = []
+  if (directions?.legs) {
+    let cDist = 0
+    let cSec = 0
+    // Origin: 0
+    cumulativeForStop.push({ dist: '0 mi', dur: '0m' })
+    for (let i = 0; i < directions.legs.length; i++) {
+      cDist += directions.legs[i].distance.value
+      cSec += directions.legs[i].duration.value
+      const distMi = Math.round(cDist / 1609.34)
+      const h = Math.floor(cSec / 3600)
+      const m = Math.round((cSec % 3600) / 60)
+      const durStr = h > 0 ? `${h}h ${m}m` : `${m}m`
+      cumulativeForStop.push({ dist: `${distMi.toLocaleString()} mi`, dur: durStr })
+    }
+  }
+
   const totalDriveHours = (directions?.total_duration_seconds ?? 0) / 3600
   const dayBreaks = directions && totalDriveHours > 10
     ? computeDayBreaks(directions.legs)
@@ -94,7 +115,7 @@ export function RouteSidebar({
     : ''
 
   return (
-    <div className="h-full flex flex-col bg-[#111215] border-r border-white/[0.08] shadow-panel">
+    <div className="h-full flex flex-col bg-tesla-panel border-r border-white/[0.08] shadow-panel">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 h-[60px] shrink-0 border-b border-white/[0.08]">
         <div className="w-7 h-7 rounded-full bg-[#4DA6FF] flex items-center justify-center shrink-0">
@@ -174,19 +195,19 @@ export function RouteSidebar({
                   return (
                     <div key={i}>
                       {dayBreak && (
-                        <div className="flex items-center gap-2 py-2">
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#4DA6FF]/10 border border-[#4DA6FF]/20">
-                            <Sunrise className="w-3 h-3 text-[#4DA6FF] shrink-0" />
-                            <span className="text-[11px] font-semibold text-[#4DA6FF]">
-                              Day {dayBreak.dayNum}
+                        <div className="flex items-center gap-2 py-1.5">
+                          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#4DA6FF]/10 border border-[#4DA6FF]/20 text-[#4DA6FF]">
+                            <Sunrise className="w-3 h-3 shrink-0" />
+                            <span className="text-[10px] font-semibold tracking-wider">
+                              DAY {dayBreak.dayNum}
                             </span>
                             {dayBreak.dayDurationSeconds > 0 && (
-                              <span className="text-[11px] text-[#4DA6FF]/50">
-                                · ~{formatDuration(dayBreak.dayDurationSeconds)}
+                              <span className="text-[10px] text-[#4DA6FF]/50 tabular-nums">
+                                ~{formatDuration(dayBreak.dayDurationSeconds)}
                               </span>
                             )}
                           </div>
-                          <div className="flex-1 h-px bg-white/[0.05]" />
+                          <div className="flex-1 h-px bg-white/[0.06]" />
                         </div>
                       )}
                       <div className={i < allStops.length - 1 ? 'mb-2.5' : ''}>
@@ -197,6 +218,10 @@ export function RouteSidebar({
                           isLast={i === allStops.length - 1}
                           location={item.location}
                           onPreviewClick={() => onPreviewStop(i)}
+                          onHover={onHoverStop}
+                          isHighlighted={highlightedStop === i}
+                          cumulativeDistance={cumulativeForStop[i]?.dist}
+                          cumulativeDuration={cumulativeForStop[i]?.dur}
                         />
                       </div>
                     </div>

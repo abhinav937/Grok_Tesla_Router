@@ -28,7 +28,7 @@ export function NaturalLanguageInput({ onSubmit, isLoading, error, onReset }: Pr
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="bg-[#111215]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-float overflow-hidden">
+      <div className="bg-tesla-panel/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-float overflow-hidden">
         {/* Header */}
         <div className="flex items-center gap-2.5 px-4 pt-4 pb-3">
           <div className="w-7 h-7 rounded-full bg-[#4DA6FF] flex items-center justify-center shrink-0">
