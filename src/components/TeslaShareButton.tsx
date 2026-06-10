@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
-import { Button } from '@/components/ui/button'
 import { ExternalLink, Copy, CheckCheck, Navigation } from 'lucide-react'
 import type { TripPlan } from '@/lib/types'
 
@@ -31,40 +30,36 @@ export function TeslaShareButton({ mapsUrl, plan }: Props) {
   }
 
   return (
-    <div className="space-y-3 pt-1">
-      {/* Primary CTA — Google blue */}
-      <Button
-        className="w-full h-12 rounded-full bg-[#1a73e8] hover:bg-[#1765cc] text-white text-sm font-medium gap-2 shadow-google"
+    <div className="space-y-2.5 pt-1">
+      <button
+        className="w-full h-12 rounded-full bg-white text-black text-[14px] font-bold flex items-center justify-center gap-2 hover:bg-white/90 active:scale-[0.98] transition-all"
         onClick={() => window.open(mapsUrl, '_blank', 'noopener,noreferrer')}
       >
         <Navigation className="w-4 h-4" />
         Open in Google Maps
-        <ExternalLink className="w-3.5 h-3.5 opacity-80" />
-      </Button>
+        <ExternalLink className="w-3.5 h-3.5 opacity-50" />
+      </button>
 
-      {/* Send-to-Tesla instructions + copy */}
-      <div className="rounded-xl bg-[#f1f3f4] px-3.5 py-3 space-y-2.5">
-        <p className="text-[13px] text-[#5f6368] leading-snug">
+      <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] px-3.5 py-3 space-y-2.5">
+        <p className="text-[12px] text-white/35 leading-snug">
           To send to your car:{' '}
-          <span className="text-[#202124] font-medium">Share</span>
-          {' → '}
-          <span className="text-[#202124] font-medium">Tesla app</span>
-          {' → '}
-          <span className="text-[#202124] font-medium">Send to Car</span>
+          <span className="text-white/65">Share</span>
+          <span className="text-white/20 mx-1">→</span>
+          <span className="text-white/65">Tesla app</span>
+          <span className="text-white/20 mx-1">→</span>
+          <span className="text-white/65">Send to Car</span>
         </p>
 
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full h-9 gap-2 text-[13px] rounded-full bg-white border-[#dadce0] text-[#1a73e8] hover:bg-[#f8f9fa] hover:text-[#1765cc]"
+        <button
+          className="w-full h-9 rounded-full border border-white/10 text-white/45 text-[12px] font-medium hover:bg-white/5 hover:text-white/65 transition-colors flex items-center justify-center gap-2"
           onClick={handleCopy}
         >
           {copied ? (
-            <><CheckCheck className="w-3.5 h-3.5 text-[#1e8e3e]" />Copied</>
+            <><CheckCheck className="w-3.5 h-3.5 text-green-400" />Copied</>
           ) : (
             <><Copy className="w-3.5 h-3.5" />Copy addresses</>
           )}
-        </Button>
+        </button>
       </div>
     </div>
   )

@@ -1,12 +1,10 @@
 'use client'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Zap, X, Info, Sunrise } from 'lucide-react'
 import { StopCard } from './StopCard'
 import { TeslaShareButton } from './TeslaShareButton'
 import { ThinkingTrace } from './ThinkingTrace'
 import { buildGoogleMapsUrl } from '@/lib/maps'
 import type { TripPlan, DirectionsResult, TripPlanUsage, TripPlanToolCall, RouteLeg } from '@/lib/types'
-import { Info, Sunrise } from 'lucide-react'
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -45,29 +43,6 @@ function computeDayBreaks(legs: RouteLeg[]): DayBreak[] {
   return breaks
 }
 
-function TripSummaryHeader({ plan, directions }: { plan: TripPlan; directions: DirectionsResult }) {
-  const miles = Math.round(directions.total_distance_meters / 1609.34).toLocaleString()
-  const driveTime = formatDuration(directions.total_duration_seconds)
-  const stopCount = plan.waypoints.length
-
-  return (
-    <div className="rounded-xl bg-white shadow-google px-4 py-3.5">
-      <div className="flex items-baseline gap-2 mb-1">
-        <span className="text-[22px] font-medium tracking-tight text-[#1a73e8]">{driveTime}</span>
-        <span className="text-[15px] text-[#5f6368]">({miles} mi)</span>
-      </div>
-      <p className="text-[13px] text-[#5f6368] leading-snug">
-        <span className="text-[#202124] font-medium">{plan.origin.name}</span>
-        {' → '}
-        <span className="text-[#202124] font-medium">{plan.destination.name}</span>
-        {stopCount > 0 && (
-          <span> · {stopCount} stop{stopCount !== 1 ? 's' : ''}</span>
-        )}
-      </p>
-    </div>
-  )
-}
-
 interface Props {
   plan: TripPlan | null
   thinking: string
@@ -77,34 +52,32 @@ interface Props {
   directions: DirectionsResult | null
   isLoading: boolean
   onPreviewStop: (index: number) => void
+  onNewTrip: () => void
 }
 
 export function RouteSidebar({
   plan, thinking, isThinking, toolCall, usage,
-  directions, isLoading, onPreviewStop,
+  directions, isLoading, onPreviewStop, onNewTrip,
 }: Props) {
   const showThinking = thinking || isThinking
 
-  if (isLoading && !plan && !showThinking) {
-    return (
-      <div className="flex-1 p-4 space-y-3 overflow-hidden">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full rounded-lg" />
-        ))}
-      </div>
-    )
-  }
-
-  const allStops = plan
-    ? [
-        { stop: plan.origin,      legAfter: directions?.legs[0] ?? null },
-        ...plan.waypoints.map((wp, i) => ({
-          stop: wp,
-          legAfter: directions?.legs[i + 1] ?? null,
-        })),
-        { stop: plan.destination, legAfter: null },
-      ]
-    : []
+  const allStops = plan ? [
+    {
+      stop: plan.origin,
+      legAfter: directions?.legs[0] ?? null,
+      location: directions?.legs[0]?.start_location,
+    },
+    ...plan.waypoints.map((wp, i) => ({
+      stop: wp,
+      legAfter: directions?.legs[i + 1] ?? null,
+      location: directions?.legs[i]?.end_location,
+    })),
+    {
+      stop: plan.destination,
+      legAfter: null,
+      location: directions ? directions.legs[directions.legs.length - 1]?.end_location : undefined,
+    },
+  ] : []
 
   const totalDriveHours = (directions?.total_duration_seconds ?? 0) / 3600
   const dayBreaks = directions && totalDriveHours > 10
@@ -121,85 +94,138 @@ export function RouteSidebar({
     : ''
 
   return (
-    <ScrollArea className="flex-1">
-      <div className="px-4 py-4 space-y-4">
-        {/* Live thinking trace */}
-        {showThinking && (
-          <ThinkingTrace
-            thinking={thinking}
-            isThinking={isThinking}
-            toolCall={toolCall}
-            usage={usage}
-          />
-        )}
+    <div className="h-full flex flex-col bg-[#111215] border-r border-white/[0.08] shadow-panel">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 h-[60px] shrink-0 border-b border-white/[0.08]">
+        <div className="w-7 h-7 rounded-full bg-[#4DA6FF] flex items-center justify-center shrink-0">
+          <Zap className="w-3.5 h-3.5 text-black" fill="currentColor" />
+        </div>
+        <span className="text-[15px] font-semibold text-white">Trip Plan</span>
+        <span className="text-[11px] text-white/20 ml-auto font-mono tracking-wide">GROK 3</span>
+        <button
+          onClick={onNewTrip}
+          className="flex items-center gap-1.5 text-[12px] text-white/35 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5 ml-1"
+        >
+          <X className="w-3.5 h-3.5" />
+          New trip
+        </button>
+      </div>
 
-        {plan && (
-          <>
-            {/* Trip summary header */}
-            {directions && (
-              <TripSummaryHeader plan={plan} directions={directions} />
-            )}
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto overscroll-contain">
+        <div className="px-4 py-4 space-y-3">
 
-            {/* Stops with optional day breaks */}
-            <div>
-              {allStops.map((item, i) => {
-                const dayBreak = showDayBreaks
-                  ? dayBreaks.find(d => d.stopIndex === i)
-                  : null
+          {/* Thinking trace */}
+          {showThinking && (
+            <ThinkingTrace
+              thinking={thinking}
+              isThinking={isThinking}
+              toolCall={toolCall}
+              usage={usage}
+            />
+          )}
 
-                return (
-                  <div key={i}>
-                    {dayBreak && (
-                      <div className="flex items-center gap-2 py-2 mb-1">
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#e8f0fe]">
-                          <Sunrise className="w-3 h-3 text-[#1a73e8] shrink-0" />
-                          <span className="text-[11px] font-medium text-[#1a73e8]">
-                            Day {dayBreak.dayNum}
-                          </span>
-                          {dayBreak.dayDurationSeconds > 0 && (
-                            <span className="text-[11px] text-[#1a73e8]/80">
-                              · ~{formatDuration(dayBreak.dayDurationSeconds)} driving
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1 h-px bg-[#dadce0]" />
-                      </div>
-                    )}
-                    <StopCard
-                      index={i}
-                      stop={item.stop}
-                      legAfter={item.legAfter}
-                      isLast={i === allStops.length - 1}
-                      onPreviewClick={() => onPreviewStop(i)}
-                    />
-                  </div>
-                )
-              })}
+          {/* Loading skeletons */}
+          {isLoading && !plan && !showThinking && (
+            <div className="space-y-3">
+              {[150, 180, 150, 120].map((h, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl bg-white/[0.04] animate-pulse"
+                  style={{ height: h }}
+                />
+              ))}
             </div>
+          )}
 
-            {/* Trip notes */}
-            {plan.trip_notes.length > 0 && (
-              <div className="bg-[#e8f0fe] rounded-xl px-3.5 py-3 space-y-1.5">
-                <div className="flex items-center gap-2 mb-2">
-                  <Info className="w-3.5 h-3.5 text-[#1a73e8] shrink-0" />
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-[#1a73e8]">
-                    Trip Notes
+          {plan && (
+            <>
+              {/* Trip summary */}
+              {directions && (
+                <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-3.5">
+                  <div className="flex items-baseline gap-2 mb-1.5">
+                    <span className="text-[24px] font-bold text-[#4DA6FF] tracking-tight">
+                      {formatDuration(directions.total_duration_seconds)}
+                    </span>
+                    <span className="text-[14px] text-white/35">
+                      ({Math.round(directions.total_distance_meters / 1609.34).toLocaleString()} mi)
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-white/55 leading-snug">
+                    <span className="text-white font-medium">{plan.origin.name}</span>
+                    <span className="text-white/25 mx-2">→</span>
+                    <span className="text-white font-medium">{plan.destination.name}</span>
+                    {plan.waypoints.length > 0 && (
+                      <span className="text-white/35 ml-1.5">
+                        · {plan.waypoints.length} stop{plan.waypoints.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
                   </p>
                 </div>
-                {plan.trip_notes.map((note, i) => (
-                  <p key={i} className="text-[13px] text-[#3c4043] leading-snug">
-                    • {note}
-                  </p>
-                ))}
+              )}
+
+              {/* Stop cards */}
+              <div className="space-y-0">
+                {allStops.map((item, i) => {
+                  const dayBreak = showDayBreaks
+                    ? dayBreaks.find(d => d.stopIndex === i)
+                    : null
+
+                  return (
+                    <div key={i}>
+                      {dayBreak && (
+                        <div className="flex items-center gap-2 py-2">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#4DA6FF]/10 border border-[#4DA6FF]/20">
+                            <Sunrise className="w-3 h-3 text-[#4DA6FF] shrink-0" />
+                            <span className="text-[11px] font-semibold text-[#4DA6FF]">
+                              Day {dayBreak.dayNum}
+                            </span>
+                            {dayBreak.dayDurationSeconds > 0 && (
+                              <span className="text-[11px] text-[#4DA6FF]/50">
+                                · ~{formatDuration(dayBreak.dayDurationSeconds)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex-1 h-px bg-white/[0.05]" />
+                        </div>
+                      )}
+                      <div className={i < allStops.length - 1 ? 'mb-2.5' : ''}>
+                        <StopCard
+                          index={i}
+                          stop={item.stop}
+                          legAfter={item.legAfter}
+                          isLast={i === allStops.length - 1}
+                          location={item.location}
+                          onPreviewClick={() => onPreviewStop(i)}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
-            )}
 
-            <TeslaShareButton mapsUrl={mapsUrl} plan={plan} />
-          </>
-        )}
+              {/* Trip notes */}
+              {plan.trip_notes.length > 0 && (
+                <div className="bg-[#4DA6FF]/[0.06] border border-[#4DA6FF]/15 rounded-xl px-3.5 py-3 space-y-1.5">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Info className="w-3.5 h-3.5 text-[#4DA6FF] shrink-0" />
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-[#4DA6FF]/70">Trip Notes</p>
+                  </div>
+                  {plan.trip_notes.map((note, i) => (
+                    <p key={i} className="text-[12px] text-white/45 leading-relaxed">
+                      · {note}
+                    </p>
+                  ))}
+                </div>
+              )}
 
-        <div className="pb-2" />
+              <TeslaShareButton mapsUrl={mapsUrl} plan={plan} />
+            </>
+          )}
+
+          <div className="pb-4" />
+        </div>
       </div>
-    </ScrollArea>
+    </div>
   )
 }

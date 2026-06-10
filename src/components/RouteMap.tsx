@@ -4,15 +4,27 @@ import { Map, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
 import { Layers, Map as MapIcon } from 'lucide-react'
 import type { TripPlan, DirectionsResult } from '@/lib/types'
 
-// Light Google-style map: keep native colors, hide POI/transit clutter
-const LIGHT_MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
-  { featureType: 'poi.park', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
+const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { elementType: 'geometry', stylers: [{ color: '#1d2330' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#1d2330' }] },
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#2d3748' }] },
+  { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#9ca3af' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#e5e7eb' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'geometry.fill', stylers: [{ color: '#2d3748' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9ca3af' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#374151' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#4b5563' }] },
+  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#d1d5db' }] },
+  { featureType: 'road.highway.controlled_access', elementType: 'geometry', stylers: [{ color: '#6b7280' }] },
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f1923' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4b5563' }] },
 ]
 
-const ROUTE_BLUE = '#1a73e8'
-const PIN_RED = '#ea4335'
+const TESLA_BLUE = '#4DA6FF'
 
 function buildInfoWindowContent(stop: {
   label: string; name: string; address: string; type: string; reason?: string
@@ -21,41 +33,40 @@ function buildInfoWindowContent(stop: {
   const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.address)}`
 
   return `
-    <div style="color:#202124;min-width:220px;max-width:280px;
-                font-family:Roboto,Arial,sans-serif;padding:2px 4px 4px;">
-      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;">
-        <div style="background:${PIN_RED};color:white;border-radius:50%;
-                    width:26px;height:26px;min-width:26px;
+    <div style="color:#111215;min-width:200px;max-width:260px;
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+                padding:2px 0 4px;">
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;">
+        <div style="background:${TESLA_BLUE};color:#000;border-radius:50%;
+                    width:24px;height:24px;min-width:24px;
                     display:flex;align-items:center;justify-content:center;
-                    font-weight:600;font-size:13px;margin-top:1px;">
+                    font-weight:700;font-size:11px;margin-top:1px;">
           ${stop.label}
         </div>
         <div style="min-width:0;flex:1;">
-          <p style="margin:0 0 3px;font-weight:500;font-size:15px;line-height:1.3;color:#202124;">
+          <p style="margin:0 0 3px;font-weight:600;font-size:14px;line-height:1.3;color:#111215;">
             ${stop.name}
           </p>
           ${isEndpoint
-            ? `<span style="font-size:12px;color:#5f6368;">${stop.type}</span>`
+            ? `<span style="font-size:12px;color:#6b7280;">${stop.type}</span>`
             : `<span style="display:inline-block;padding:1px 8px;border-radius:99px;
-                            background:#f1f3f4;font-size:11px;color:#5f6368;
-                            text-transform:capitalize;">
+                            background:rgba(77,166,255,0.12);font-size:11px;color:${TESLA_BLUE};
+                            border:1px solid rgba(77,166,255,0.3);text-transform:capitalize;">
                  ${stop.type}
                </span>`
           }
         </div>
       </div>
-      <p style="margin:0 0 6px;font-size:13px;color:#5f6368;line-height:1.4;">
+      <p style="margin:0 0 6px;font-size:12px;color:#6b7280;line-height:1.4;">
         ${stop.address}
       </p>
       ${stop.reason
-        ? `<p style="margin:0 0 10px;font-size:13px;color:#3c4043;line-height:1.4;">
-             ${stop.reason}
-           </p>`
+        ? `<p style="margin:0 0 10px;font-size:12px;color:#374151;line-height:1.4;">${stop.reason}</p>`
         : '<div style="margin-bottom:8px;"></div>'
       }
       <a href="${mapsLink}" target="_blank" rel="noopener noreferrer"
-         style="color:${ROUTE_BLUE};font-size:13px;text-decoration:none;font-weight:500;">
-        Directions
+         style="color:${TESLA_BLUE};font-size:13px;text-decoration:none;font-weight:600;">
+        Open in Maps →
       </a>
     </div>`
 }
@@ -77,7 +88,6 @@ function MapOverlays({ plan, directions, highlightedStop, onHighlightClear }: Ma
   const animFrameRef = useRef<number>(0)
   const allStopsRef = useRef<Array<{ position: google.maps.LatLng | google.maps.LatLngLiteral; infoContent: string }>>([])
 
-  // Animated route: white casing under a Google-blue line
   useEffect(() => {
     if (!map || !geometryLib || !directions?.overview_polyline) return
 
@@ -88,7 +98,7 @@ function MapOverlays({ plan, directions, highlightedStop, onHighlightClear }: Ma
     const fullPath = geometryLib.encoding.decodePath(directions.overview_polyline)
 
     const casing = new google.maps.Polyline({
-      strokeColor: '#ffffff',
+      strokeColor: 'rgba(0,0,0,0.4)',
       strokeOpacity: 1,
       strokeWeight: 9,
       geodesic: true,
@@ -96,7 +106,7 @@ function MapOverlays({ plan, directions, highlightedStop, onHighlightClear }: Ma
       map,
     })
     const line = new google.maps.Polyline({
-      strokeColor: ROUTE_BLUE,
+      strokeColor: TESLA_BLUE,
       strokeOpacity: 1,
       strokeWeight: 5,
       geodesic: true,
@@ -120,7 +130,7 @@ function MapOverlays({ plan, directions, highlightedStop, onHighlightClear }: Ma
 
     const bounds = new google.maps.LatLngBounds()
     fullPath.forEach(p => bounds.extend(p))
-    map.fitBounds(bounds, { top: 80, right: 60, bottom: 80, left: 60 })
+    map.fitBounds(bounds, { top: 80, right: 60, bottom: 80, left: 460 })
 
     return () => {
       cancelAnimationFrame(animFrameRef.current)
@@ -131,7 +141,6 @@ function MapOverlays({ plan, directions, highlightedStop, onHighlightClear }: Ma
     }
   }, [map, geometryLib, directions?.overview_polyline])
 
-  // Markers + info windows
   useEffect(() => {
     if (!map || !directions?.legs.length || !plan) return
 
@@ -177,14 +186,13 @@ function MapOverlays({ plan, directions, highlightedStop, onHighlightClear }: Ma
 
     markersRef.current = stopsData.map((stop, idx) => {
       const isEndpoint = stop.type === 'Start' || stop.type === 'End'
-      // Classic Google red teardrop pin with a white letter
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
-        <filter id="s"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="rgba(0,0,0,0.35)"/></filter>
+        <filter id="ds"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="rgba(0,0,0,0.6)"/></filter>
         <path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 26 16 26s16-14 16-26C32 7.16 24.84 0 16 0z"
-          fill="${PIN_RED}" filter="url(#s)"/>
-        <circle cx="16" cy="15.5" r="11" fill="${isEndpoint ? '#c5221f' : 'rgba(0,0,0,0.12)'}"/>
-        <text x="16" y="20" text-anchor="middle" fill="white"
-          font-family="Roboto,Arial,sans-serif" font-size="13" font-weight="600">${stop.label}</text>
+          fill="${TESLA_BLUE}" filter="url(#ds)"/>
+        <circle cx="16" cy="15.5" r="10" fill="${isEndpoint ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.2)'}"/>
+        <text x="16" y="20" text-anchor="middle" fill="#000"
+          font-family="-apple-system,sans-serif" font-size="12" font-weight="700">${stop.label}</text>
       </svg>`
 
       const marker = new google.maps.Marker({
@@ -215,7 +223,6 @@ function MapOverlays({ plan, directions, highlightedStop, onHighlightClear }: Ma
     }
   }, [map, directions?.legs, plan, onHighlightClear])
 
-  // Trigger info window from sidebar "Map" button
   useEffect(() => {
     if (highlightedStop == null || !map) return
     const marker = markersRef.current[highlightedStop]
@@ -253,12 +260,9 @@ export function RouteMap({ plan, directions, isLoading, highlightedStop, onHighl
         defaultZoom={4}
         defaultCenter={{ lat: 39.8283, lng: -98.5795 }}
         gestureHandling="greedy"
-        disableDefaultUI={false}
+        disableDefaultUI={true}
         zoomControl={true}
-        streetViewControl={false}
-        mapTypeControl={false}
-        fullscreenControl={true}
-        styles={mapType === 'roadmap' ? LIGHT_MAP_STYLES : undefined}
+        styles={mapType === 'roadmap' ? DARK_MAP_STYLES : undefined}
         className="w-full h-full"
       >
         <MapTypeController mapType={mapType} />
@@ -270,34 +274,25 @@ export function RouteMap({ plan, directions, isLoading, highlightedStop, onHighl
         />
       </Map>
 
-      {/* Map type toggle — Google control style */}
-      <div className="absolute top-3 left-3 z-10">
+      {/* Map type toggle — top right, clear of the left panel */}
+      <div className="absolute top-4 right-4 z-10">
         <button
           onClick={() => setMapType(t => t === 'roadmap' ? 'satellite' : 'roadmap')}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white text-[#3c4043] text-sm font-medium hover:bg-gray-50 transition-colors shadow-google"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#111215]/90 text-white/70 text-sm font-medium hover:bg-[#1A1B1F]/90 hover:text-white transition-colors shadow-float backdrop-blur-sm border border-white/10"
         >
           {mapType === 'roadmap'
-            ? <><Layers className="w-4 h-4 text-[#5f6368]" /> Satellite</>
-            : <><MapIcon className="w-4 h-4 text-[#5f6368]" /> Map</>
+            ? <><Layers className="w-4 h-4" /> Satellite</>
+            : <><MapIcon className="w-4 h-4" /> Map</>
           }
         </button>
       </div>
 
       {/* Route calculating overlay */}
       {isLoading && (
-        <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
-          <div className="flex flex-col items-center gap-3 px-5 py-4 rounded-xl bg-white shadow-google-lg">
-            <div className="w-9 h-9 rounded-full border-[3px] border-[#1a73e8] border-t-transparent animate-spin" />
-            <p className="text-sm text-[#5f6368]">Calculating route…</p>
-          </div>
-        </div>
-      )}
-
-      {/* Empty state hint */}
-      {!plan && !isLoading && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-none">
-          <div className="px-4 py-2.5 rounded-full bg-white shadow-google text-sm text-[#5f6368] whitespace-nowrap">
-            Enter your trip to see the route
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
+          <div className="flex flex-col items-center gap-3 px-6 py-4 rounded-2xl bg-[#111215]/95 border border-white/10 shadow-float">
+            <div className="w-9 h-9 rounded-full border-[3px] border-[#4DA6FF]/30 border-t-[#4DA6FF] animate-spin" />
+            <p className="text-sm text-white/50">Calculating route…</p>
           </div>
         </div>
       )}

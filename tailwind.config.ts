@@ -11,18 +11,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        tesla: { red: '#CC0000', dark: '#8B0000' },
-        google: {
-          blue: '#1a73e8',
-          'blue-dark': '#1765cc',
-          'blue-light': '#e8f0fe',
-          red: '#ea4335',
-          green: '#1e8e3e',
-          yellow: '#f9ab00',
-          gray: '#5f6368',
-          surface: '#f1f3f4',
-          border: '#dadce0',
-          text: '#202124',
+        tesla: {
+          blue: '#4DA6FF',
+          'blue-dark': '#2B7FDB',
+          dark: '#0D0E11',
+          panel: '#111215',
+          card: '#1A1B1F',
         },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

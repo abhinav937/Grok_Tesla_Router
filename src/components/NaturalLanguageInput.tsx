@@ -1,12 +1,10 @@
 'use client'
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Loader2, Navigation, RotateCcw } from 'lucide-react'
+import { Loader2, Zap, X } from 'lucide-react'
 
 const EXAMPLES = [
   'Madison WI to Austin TX, max 9 hours driving per day, BBQ stop in Kansas City, scenic through Texas Hill Country',
-  'San Francisco to Portland OR, coastal Hwy 1, quick food stops only, avoid big cities',
+  'San Francisco to Portland OR, coastal Hwy 1, food stops only, avoid big cities',
   'Chicago to Nashville, only roadside BBQ joints, keep total drive under 8 hours',
 ]
 
@@ -29,72 +27,76 @@ export function NaturalLanguageInput({ onSubmit, isLoading, error, onReset }: Pr
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-[#1a73e8] flex items-center justify-center shrink-0">
-            <Navigation className="w-4 h-4 text-white" />
+    <form onSubmit={handleSubmit}>
+      <div className="bg-[#111215]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-float overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-2.5 px-4 pt-4 pb-3">
+          <div className="w-7 h-7 rounded-full bg-[#4DA6FF] flex items-center justify-center shrink-0">
+            <Zap className="w-3.5 h-3.5 text-black" fill="currentColor" />
           </div>
-          <h1 className="text-[18px] font-medium tracking-tight text-[#202124]">Tesla Trip Planner</h1>
+          <span className="text-[15px] font-semibold tracking-tight text-white">Tesla Trip Planner</span>
+          <span className="ml-auto text-[11px] text-white/25 font-mono tracking-wide">GROK 3</span>
         </div>
-        {onReset && (
+
+        <div className="h-px bg-white/[0.06] mx-0" />
+
+        {/* Textarea */}
+        <div className="px-4 pt-3 pb-1">
+          <textarea
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+            placeholder={EXAMPLES[placeholderIdx]}
+            rows={3}
+            className="w-full bg-transparent border-0 outline-none resize-none text-[14px] text-white placeholder:text-white/20 leading-relaxed"
+            disabled={isLoading}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                handleSubmit(e as unknown as React.FormEvent)
+              }
+            }}
+          />
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mx-4 mb-3 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between gap-2">
+            <p className="text-[12px] text-red-400 leading-snug">{error}</p>
+            {onReset && (
+              <button
+                type="button"
+                onClick={onReset}
+                className="text-white/30 hover:text-white/60 transition-colors shrink-0"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="px-4 pb-4 pt-2 flex items-center gap-3">
+          <p className="text-[11px] text-white/20 flex-1 leading-snug">
+            Try{' '}
+            <span className="text-white/35">&ldquo;max 9h/day&rdquo;</span>
+            {' · '}
+            <span className="text-white/35">&ldquo;scenic route&rdquo;</span>
+            {' · '}
+            <span className="text-white/35">&ldquo;food stops only&rdquo;</span>
+          </p>
+
           <button
-            type="button"
-            onClick={onReset}
-            className="flex items-center gap-1 text-[13px] text-[#1a73e8] font-medium hover:text-[#1765cc] transition-colors"
+            type="submit"
+            disabled={!prompt.trim() || isLoading}
+            className="flex items-center gap-2 px-5 h-9 rounded-full bg-[#4DA6FF] text-black text-[13px] font-bold hover:bg-[#2B7FDB] hover:text-white transition-colors disabled:opacity-25 disabled:cursor-not-allowed shrink-0"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            New trip
+            {isLoading ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" />Planning…</>
+            ) : (
+              <>Plan route</>
+            )}
           </button>
-        )}
+        </div>
       </div>
-
-      {/* Search-card styled textarea */}
-      <div className="rounded-xl bg-white shadow-google focus-within:shadow-google-lg transition-shadow">
-        <Textarea
-          value={prompt}
-          onChange={e => setPrompt(e.target.value)}
-          placeholder={EXAMPLES[placeholderIdx]}
-          className="min-h-[92px] bg-transparent border-0 shadow-none resize-none text-sm rounded-xl focus-visible:ring-0 focus-visible:ring-offset-0 text-[#202124] placeholder:text-[#80868b]"
-          disabled={isLoading}
-          onKeyDown={e => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-              handleSubmit(e as unknown as React.FormEvent)
-            }
-          }}
-        />
-      </div>
-
-      {error && (
-        <p className="text-[13px] text-[#d93025] flex items-center gap-1.5">
-          {error}
-          {onReset && (
-            <button type="button" onClick={onReset} className="underline hover:no-underline font-medium">
-              Try again
-            </button>
-          )}
-        </p>
-      )}
-
-      <Button
-        type="submit"
-        disabled={!prompt.trim() || isLoading}
-        className="w-full h-11 rounded-full bg-[#1a73e8] hover:bg-[#1765cc] text-white text-sm font-medium shadow-google disabled:shadow-none"
-      >
-        {isLoading ? (
-          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Planning route…</>
-        ) : (
-          <><Navigation className="w-4 h-4 mr-2" />Plan my trip</>
-        )}
-      </Button>
-
-      <p className="text-[12px] text-[#5f6368] leading-snug">
-        Add constraints like <span className="text-[#202124]">“max 9h/day”</span>,{' '}
-        <span className="text-[#202124]">“only food stops”</span>,{' '}
-        <span className="text-[#202124]">“scenic route”</span>, or{' '}
-        <span className="text-[#202124]">“avoid highways”</span>.
-        Press <kbd className="px-1 py-px bg-[#f1f3f4] rounded text-[10px] text-[#5f6368]">⌘↵</kbd> to submit.
-      </p>
     </form>
   )
 }
