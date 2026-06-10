@@ -36,6 +36,7 @@ export function StopCard({
   location,
   onPreviewClick,
   onHover,
+  isHighlighted,
   cumulativeDistance,
   cumulativeDuration,
 }: Props) {

@@ -49,7 +49,7 @@ export function TripPlanner() {
         <div
           className={cn(
             'absolute left-0 top-0 bottom-0 w-[420px] z-20',
-            'transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]',
+            'transition-transform duration-500 ease-panel',
             panelOpen ? 'translate-x-0' : '-translate-x-full'
           )}
         >
