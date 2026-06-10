@@ -41,7 +41,7 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
   { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4b5563' }] },
 ]
 
-const TESLA_BLUE = '#4DA6FF'
+const ACCENT = '#3CE0C4' // design system electric cyan
 
 const STOP_COLORS: Record<StopType | 'endpoint', string> = {
   food: '#FB923C',
@@ -49,7 +49,7 @@ const STOP_COLORS: Record<StopType | 'endpoint', string> = {
   scenic: '#38BDF8',
   rest: '#A78BFA',
   attraction: '#FBBF24',
-  endpoint: TESLA_BLUE,
+  endpoint: ACCENT,
 }
 
 interface RoutePolylinesProps {
@@ -76,7 +76,7 @@ function RoutePolylines({ directions }: RoutePolylinesProps) {
 
     // Subtle outer glow for premium Tesla feel
     const glow = new google.maps.Polyline({
-      strokeColor: TESLA_BLUE,
+      strokeColor: ACCENT,
       strokeOpacity: 0.18,
       strokeWeight: 13,
       geodesic: true,
@@ -94,7 +94,7 @@ function RoutePolylines({ directions }: RoutePolylinesProps) {
     })
     // Main Tesla blue line
     const line = new google.maps.Polyline({
-      strokeColor: TESLA_BLUE,
+      strokeColor: ACCENT,
       strokeOpacity: 1,
       strokeWeight: 5,
       geodesic: true,

@@ -1,0 +1,40 @@
+<!-- @dsCard group="Templates" name="Trip Planner — Full Flow" subtitle="Premium redesign · idle → Grok stream → route draw → cards" viewport="1280x860" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tesla Trip Planner — Redesign</title>
+
+  <!-- Design-system tokens (fonts, colors, type, spacing, effects) -->
+  <link rel="stylesheet" href="../../styles.css" />
+  <!-- Prototype styles -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- React + Babel (pinned) -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- spin keyframe for the local Spinner -->
+  <style>@keyframes ttp-spin { to { transform: rotate(360deg); } }</style>
+
+  <!-- Prototype modules -->
+  <script type="text/babel" src="data.jsx"></script>
+  <script type="text/babel" src="Icon.jsx"></script>
+  <script type="text/babel" src="MapStage.jsx"></script>
+  <script type="text/babel" src="ThinkingTrace.jsx"></script>
+  <script type="text/babel" src="StopCard.jsx"></script>
+  <script type="text/babel" src="Composer.jsx"></script>
+  <script type="text/babel" src="TripPanel.jsx"></script>
+  <script type="text/babel" src="App.jsx"></script>
+
+  <script type="text/babel" data-presets="react">
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

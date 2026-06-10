@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Loader2, Zap, X } from 'lucide-react'
+import { Loader2, Zap, X, ArrowRight, Sparkles } from 'lucide-react'
 
 const EXAMPLES = [
   'Madison WI to Austin TX, max 9 hours driving per day, BBQ stop in Kansas City, scenic through Texas Hill Country',
@@ -27,26 +27,27 @@ export function NaturalLanguageInput({ onSubmit, isLoading, error, onReset }: Pr
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="bg-tesla-panel/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-float overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center gap-2.5 px-4 pt-4 pb-3">
-          <div className="w-7 h-7 rounded-full bg-[#4DA6FF] flex items-center justify-center shrink-0">
-            <Zap className="w-3.5 h-3.5 text-black" fill="currentColor" />
-          </div>
-          <span className="text-[15px] font-semibold tracking-tight text-white">Tesla Trip Planner</span>
-          <span className="ml-auto text-[11px] text-white/25 font-mono tracking-wide">GROK 3</span>
+    <form onSubmit={handleSubmit} className="composer-wrap">
+      <div className="composer anim-rise-soft">
+        {/* Brand row */}
+        <div className="composer-brand">
+          <span className="brand-orb">
+            <Zap className="w-3.5 h-3.5" style={{ color: 'var(--accent-fg)' }} />
+          </span>
+          <span className="composer-brandname">Tesla Trip Planner</span>
+          <span className="model-tag mono">GROK&nbsp;3</span>
         </div>
 
-        <div className="h-px bg-white/[0.06] mx-0" />
+        <h1 className="composer-hero">Where to?</h1>
+        <p className="composer-sub">Describe the trip in a sentence — Grok plans the route, stops, and charging.</p>
 
-        {/* Textarea */}
-        <div className="px-4 pt-3 pb-1">
+        {/* Field */}
+        <div className="composer-field">
           <textarea
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
             placeholder={EXAMPLES[placeholderIdx]}
-            rows={3}
+            rows={2}
             className="w-full bg-transparent border-0 outline-none resize-none text-[14px] text-white placeholder:text-white/20 leading-relaxed"
             disabled={isLoading}
             onKeyDown={e => {
@@ -57,16 +58,28 @@ export function NaturalLanguageInput({ onSubmit, isLoading, error, onReset }: Pr
           />
         </div>
 
+        {/* Chips */}
+        <div className="composer-chips">
+          {EXAMPLES.map((p, i) => (
+            <button
+              key={i}
+              type="button"
+              className="chip"
+              onClick={() => setPrompt(p)}
+              disabled={isLoading}
+            >
+              <Sparkles className="w-2.5 h-2.5" style={{ color: 'var(--accent)' }} />
+              {p.length > 58 ? p.slice(0, 55) + '…' : p}
+            </button>
+          ))}
+        </div>
+
         {/* Error */}
         {error && (
-          <div className="mx-4 mb-3 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between gap-2">
-            <p className="text-[12px] text-red-400 leading-snug">{error}</p>
+          <div className="mt-3 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between gap-2 text-[12px] text-red-400">
+            <span>{error}</span>
             {onReset && (
-              <button
-                type="button"
-                onClick={onReset}
-                className="text-white/30 hover:text-white/60 transition-colors shrink-0"
-              >
+              <button type="button" onClick={onReset} className="text-white/30 hover:text-white/60">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -74,25 +87,19 @@ export function NaturalLanguageInput({ onSubmit, isLoading, error, onReset }: Pr
         )}
 
         {/* Footer */}
-        <div className="px-4 pb-4 pt-2 flex items-center gap-3">
-          <p className="text-[11px] text-white/20 flex-1 leading-snug">
-            Try{' '}
-            <span className="text-white/35">&ldquo;max 9h/day&rdquo;</span>
-            {' · '}
-            <span className="text-white/35">&ldquo;scenic route&rdquo;</span>
-            {' · '}
-            <span className="text-white/35">&ldquo;food stops only&rdquo;</span>
-          </p>
-
+        <div className="composer-foot">
+          <span className="composer-hint">
+            Try <em>“max 9h/day”</em> · <em>“scenic route”</em> · <em>“food stops only”</em>
+          </span>
           <button
             type="submit"
             disabled={!prompt.trim() || isLoading}
-            className="flex items-center gap-2 px-5 h-9 rounded-full bg-[#4DA6FF] text-black text-[13px] font-bold hover:bg-[#2B7FDB] hover:text-white transition-colors disabled:opacity-25 disabled:cursor-not-allowed shrink-0"
+            className="btn-plan"
           >
             {isLoading ? (
-              <><Loader2 className="w-3.5 h-3.5 animate-spin" />Planning…</>
+              <>Planning… <Loader2 className="w-4 h-4 animate-spin" /></>
             ) : (
-              <>Plan route</>
+              <>Plan route <ArrowRight className="w-4 h-4" />
             )}
           </button>
         </div>

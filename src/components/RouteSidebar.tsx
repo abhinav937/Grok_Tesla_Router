@@ -115,26 +115,22 @@ export function RouteSidebar({
     : ''
 
   return (
-    <div className="h-full flex flex-col bg-tesla-panel border-r border-white/[0.08] shadow-panel">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 h-[60px] shrink-0 border-b border-white/[0.08]">
-        <div className="w-7 h-7 rounded-full bg-[#4DA6FF] flex items-center justify-center shrink-0">
-          <Zap className="w-3.5 h-3.5 text-black" fill="currentColor" />
-        </div>
-        <span className="text-[15px] font-semibold text-white">Trip Plan</span>
-        <span className="text-[11px] text-white/20 ml-auto font-mono tracking-wide">GROK 3</span>
-        <button
-          onClick={onNewTrip}
-          className="flex items-center gap-1.5 text-[12px] text-white/35 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5 ml-1"
-        >
-          <X className="w-3.5 h-3.5" />
-          New trip
+    <div className="panel h-full"> {/* design system glass panel */}
+      {/* Header — design system */}
+      <header className="panel-head">
+        <span className="brand-orb">
+          <Zap className="w-3.5 h-3.5" style={{ color: 'var(--accent-fg)' }} />
+        </span>
+        <span className="panel-title">Trip Plan</span>
+        <span className="model-tag mono">GROK&nbsp;3</span>
+        <button className="newtrip-btn" onClick={onNewTrip}>
+          <X className="w-3 h-3" /> New trip
         </button>
-      </div>
+      </header>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto overscroll-contain">
-        <div className="px-4 py-4 space-y-3">
+      {/* Scrollable content — design system panel-scroll */}
+      <div className="panel-scroll">
+        <div className="space-y-3">
 
           {/* Thinking trace */}
           {showThinking && (
@@ -161,32 +157,28 @@ export function RouteSidebar({
 
           {plan && (
             <>
-              {/* Trip summary */}
+              {/* Summary — design system .summary */}
               {directions && (
-                <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-3.5">
-                  <div className="flex items-baseline gap-2 mb-1.5">
-                    <span className="text-[24px] font-bold text-[#4DA6FF] tracking-tight">
-                      {formatDuration(directions.total_duration_seconds)}
-                    </span>
-                    <span className="text-[14px] text-white/35">
-                      ({Math.round(directions.total_distance_meters / 1609.34).toLocaleString()} mi)
-                    </span>
+                <div className="summary anim-rise">
+                  <div className="summary-top">
+                    <div className="summary-metric">
+                      <span className="summary-time">{formatDuration(directions.total_duration_seconds)}</span>
+                      <span className="summary-dist mono">({Math.round(directions.total_distance_meters / 1609.34).toLocaleString()} mi)</span>
+                    </div>
                   </div>
-                  <p className="text-[13px] text-white/55 leading-snug">
-                    <span className="text-white font-medium">{plan.origin.name}</span>
-                    <span className="text-white/25 mx-2">→</span>
-                    <span className="text-white font-medium">{plan.destination.name}</span>
+                  <div className="summary-route">
+                    <b>{plan.origin.name}</b>
+                    <span style={{ color: 'var(--text-subtle)' }}>→</span>
+                    <b>{plan.destination.name}</b>
                     {plan.waypoints.length > 0 && (
-                      <span className="text-white/35 ml-1.5">
-                        · {plan.waypoints.length} stop{plan.waypoints.length !== 1 ? 's' : ''}
-                      </span>
+                      <span className="summary-stops">· {plan.waypoints.length} stops</span>
                     )}
-                  </p>
+                  </div>
                 </div>
               )}
 
-              {/* Stop cards */}
-              <div className="space-y-0">
+              {/* Stop list — design system */}
+              <div className="stop-list">
                 {allStops.map((item, i) => {
                   const dayBreak = showDayBreaks
                     ? dayBreaks.find(d => d.stopIndex === i)
@@ -196,13 +188,11 @@ export function RouteSidebar({
                     <div key={i}>
                       {dayBreak && (
                         <div className="flex items-center gap-2 py-1.5">
-                          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#4DA6FF]/10 border border-[#4DA6FF]/20 text-[#4DA6FF]">
+                          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--accent-tint)] border border-[color-mix(in_srgb,var(--accent)_22%,transparent)] text-[var(--accent)]">
                             <Sunrise className="w-3 h-3 shrink-0" />
-                            <span className="text-[10px] font-semibold tracking-wider">
-                              DAY {dayBreak.dayNum}
-                            </span>
+                            <span className="text-[10px] font-semibold tracking-wider">DAY {dayBreak.dayNum}</span>
                             {dayBreak.dayDurationSeconds > 0 && (
-                              <span className="text-[10px] text-[#4DA6FF]/50 tabular-nums">
+                              <span className="text-[10px] text-[var(--accent)]/50 tabular-nums">
                                 ~{formatDuration(dayBreak.dayDurationSeconds)}
                               </span>
                             )}
@@ -229,22 +219,23 @@ export function RouteSidebar({
                 })}
               </div>
 
-              {/* Trip notes */}
+              {/* Trip notes — design system */}
               {plan.trip_notes.length > 0 && (
-                <div className="bg-[#4DA6FF]/[0.06] border border-[#4DA6FF]/15 rounded-xl px-3.5 py-3 space-y-1.5">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Info className="w-3.5 h-3.5 text-[#4DA6FF] shrink-0" />
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-[#4DA6FF]/70">Trip Notes</p>
+                <section className="notes anim-rise">
+                  <div className="notes-head">
+                    <Info className="w-3 h-3" style={{ color: 'var(--accent)' }} />
+                    <span>Trip notes</span>
                   </div>
                   {plan.trip_notes.map((note, i) => (
-                    <p key={i} className="text-[12px] text-white/45 leading-relaxed">
-                      · {note}
-                    </p>
+                    <p key={i} className="note">{note}</p>
                   ))}
-                </div>
+                </section>
               )}
 
-              <TeslaShareButton mapsUrl={mapsUrl} plan={plan} />
+              {/* Handoff — design system */}
+              <section className="handoff anim-rise">
+                <TeslaShareButton mapsUrl={mapsUrl} plan={plan} />
+              </section>
             </>
           )}
 

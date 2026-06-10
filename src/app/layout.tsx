@@ -1,12 +1,20 @@
 import type { Metadata, Viewport } from 'next'
-import { Roboto } from 'next/font/google'
+import { Sora, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/Providers'
 
-const roboto = Roboto({
+const sora = Sora({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sans',
+  display: 'swap',
+})
+
+const jetbrains = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['400', '500', '700'],
-  variable: '--font-sans',
+  variable: '--font-mono',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -36,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
       </head>
-      <body className={`${roboto.variable} font-sans antialiased`}>
+      <body className={`${sora.variable} ${jetbrains.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>

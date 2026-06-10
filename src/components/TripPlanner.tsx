@@ -33,7 +33,7 @@ export function TripPlanner() {
 
   return (
     <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ''}>
-      <div className="relative h-[100dvh] w-full overflow-hidden bg-tesla-dark">
+      <div className="relative h-[100dvh] w-full overflow-hidden" style={{ background: 'var(--surface-bg)' }}>
         {/* Full-screen map */}
         <div className="absolute inset-0">
           <RouteMap
@@ -78,16 +78,14 @@ export function TripPlanner() {
           </button>
         )}
 
-        {/* Bottom floating input */}
+        {/* Idle Composer — centered glass (design system) */}
         {showInput && (
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 w-full max-w-[620px] px-4">
-            <NaturalLanguageInput
-              onSubmit={trip.mutate}
-              isLoading={false}
-              error={trip.error ?? undefined}
-              onReset={trip.status === 'error' ? handleReset : undefined}
-            />
-          </div>
+          <NaturalLanguageInput
+            onSubmit={trip.mutate}
+            isLoading={false}
+            error={trip.error ?? undefined}
+            onReset={trip.status === 'error' ? handleReset : undefined}
+          />
         )}
       </div>
     </APIProvider>

@@ -1,0 +1,48 @@
+/* ============================================================
+   TYPOGRAPHY — Tesla Trip Planner · Premium redesign
+   Sora carries display + UI (geometric, confident, premium);
+   JetBrains Mono handles telemetry — token counts, coordinates,
+   units, the reasoning trace. Tight tracking on big metrics,
+   relaxed leading on streamed reasoning text.
+   ============================================================ */
+
+:root {
+  /* --- Families --- */
+  --font-sans: 'Sora', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Sora', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* --- Weights --- */
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* --- Type scale (px values used across the product UI) --- */
+  --text-hero:     44px;  /* hero metric / speedo-style numbers */
+  --text-display:  28px;  /* trip duration, big metrics */
+  --text-title:    16px;  /* panel titles */
+  --text-body:     14px;  /* default body / inputs */
+  --text-sm:       13px;  /* secondary body */
+  --text-meta:     12px;  /* meta rows, captions */
+  --text-label:    11px;  /* labels, model tag, hints */
+  --text-micro:    10px;  /* badges, legends, token counts */
+
+  /* --- Line heights --- */
+  --leading-tight:   1.2;
+  --leading-snug:    1.35;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+
+  /* --- Letter spacing --- */
+  --tracking-tight:  -0.4px;  /* display / titles */
+  --tracking-normal: 0;
+  --tracking-wide:   0.4px;   /* mono model tags */
+  --tracking-widest: 1.2px;   /* uppercase section labels */
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}

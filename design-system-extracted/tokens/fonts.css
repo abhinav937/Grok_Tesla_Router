@@ -1,0 +1,9 @@
+/* ============================================================
+   FONTS — Tesla Trip Planner · Premium redesign
+   Sora (geometric display + UI) and JetBrains Mono (telemetry:
+   token counts, coordinates, units, the reasoning trace).
+   Loaded from Google Fonts so consumers get the real faces;
+   self-host by replacing this import with @font-face + woff2.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
