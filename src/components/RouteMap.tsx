@@ -283,7 +283,7 @@ function RouteMarkers({ plan, directions, highlightedStop, onHighlight }: RouteM
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedStop.address)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#4DA6FF] text-[12px] font-semibold hover:underline"
+              className="text-[var(--accent)] text-[12px] font-semibold hover:underline"
             >
               Open in Maps →
             </a>
