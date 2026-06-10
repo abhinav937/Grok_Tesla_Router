@@ -1,16 +1,17 @@
 'use client'
+import { useState } from 'react'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { NaturalLanguageInput } from './NaturalLanguageInput'
 import { RouteMap } from './RouteMap'
 import { RouteSidebar } from './RouteSidebar'
 import { useTripPlan } from '@/hooks/useTripPlan'
 import { useDirections } from '@/hooks/useDirections'
+import { cn } from '@/lib/utils'
 
 export function TripPlanner() {
   const trip = useTripPlan()
   const directionsQuery = useDirections(trip.plan)
-
-  const isLoadingDirections = directionsQuery.isFetching
+  const [highlightedStop, setHighlightedStop] = useState<number | null>(null)
 
   return (
     <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ''}>
@@ -39,7 +40,8 @@ export function TripPlanner() {
               toolCall={trip.toolCall}
               usage={trip.usage}
               directions={directionsQuery.data ?? null}
-              isLoading={isLoadingDirections}
+              isLoading={directionsQuery.isFetching}
+              onPreviewStop={setHighlightedStop}
             />
           </div>
         </div>
@@ -49,14 +51,12 @@ export function TripPlanner() {
           <RouteMap
             plan={trip.plan}
             directions={directionsQuery.data ?? null}
-            isLoading={isLoadingDirections}
+            isLoading={directionsQuery.isFetching}
+            highlightedStop={highlightedStop}
+            onHighlightClear={() => setHighlightedStop(null)}
           />
         </div>
       </div>
     </APIProvider>
   )
-}
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ')
 }

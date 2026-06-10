@@ -5,42 +5,92 @@ import { Layers, Map as MapIcon } from 'lucide-react'
 import type { TripPlan, DirectionsResult } from '@/lib/types'
 
 const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: 'geometry', stylers: [{ color: '#141414' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#141414' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2d2d2d' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3a3a3a' }] },
-  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#1a1a1a' }] },
-  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#a0a0a0' }] },
-  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#7a7a7a' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0a0f1a' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#1e3a5f' }] },
-  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#1a1f14' }] },
-  { featureType: 'landscape.man_made', elementType: 'geometry', stylers: [{ color: '#1c1c1c' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#141f10' }] },
-  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#3a5c30' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#2a2a2a' }] },
+  { elementType: 'geometry',                                       stylers: [{ color: '#141414' }] },
+  { elementType: 'labels.text.stroke',                             stylers: [{ color: '#141414' }] },
+  { elementType: 'labels.text.fill',                               stylers: [{ color: '#6b7280' }] },
+  { featureType: 'road',           elementType: 'geometry',        stylers: [{ color: '#2d2d2d' }] },
+  { featureType: 'road.highway',   elementType: 'geometry',        stylers: [{ color: '#3a3a3a' }] },
+  { featureType: 'road.highway',   elementType: 'geometry.stroke', stylers: [{ color: '#1a1a1a' }] },
+  { featureType: 'road.highway',   elementType: 'labels.text.fill',stylers: [{ color: '#a0a0a0' }] },
+  { featureType: 'road',           elementType: 'labels.text.fill',stylers: [{ color: '#7a7a7a' }] },
+  { featureType: 'water',          elementType: 'geometry',        stylers: [{ color: '#0a0f1a' }] },
+  { featureType: 'water',          elementType: 'labels.text.fill',stylers: [{ color: '#1e3a5f' }] },
+  { featureType: 'landscape.natural', elementType: 'geometry',     stylers: [{ color: '#1a1f14' }] },
+  { featureType: 'landscape.man_made', elementType: 'geometry',    stylers: [{ color: '#1c1c1c' }] },
+  { featureType: 'poi.park',       elementType: 'geometry',        stylers: [{ color: '#141f10' }] },
+  { featureType: 'poi.park',       elementType: 'labels.text.fill',stylers: [{ color: '#3a5c30' }] },
+  { featureType: 'poi',                                            stylers: [{ visibility: 'off'  }] },
+  { featureType: 'transit',                                        stylers: [{ visibility: 'off'  }] },
+  { featureType: 'administrative', elementType: 'geometry',        stylers: [{ color: '#2a2a2a' }] },
   { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#555' }] },
   { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#888' }] },
-  { featureType: 'administrative.neighborhood', elementType: 'labels.text.fill', stylers: [{ color: '#555' }] },
 ]
+
+function buildInfoWindowContent(stop: {
+  label: string; name: string; address: string; type: string; reason?: string
+}) {
+  const isEndpoint = stop.type === 'Start' || stop.type === 'End'
+  const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.address)}`
+
+  return `
+    <div style="background:#1a1a1a;color:#f0f0f0;border-radius:10px;overflow:hidden;
+                min-width:220px;max-width:260px;
+                font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+                padding:14px 14px 12px;">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;">
+        <div style="background:#CC0000;color:white;border-radius:50%;
+                    width:30px;height:30px;min-width:30px;
+                    display:flex;align-items:center;justify-content:center;
+                    font-weight:700;font-size:13px;margin-top:1px;">
+          ${stop.label}
+        </div>
+        <div style="min-width:0;flex:1;">
+          <p style="margin:0 0 3px;font-weight:600;font-size:13px;line-height:1.3;">
+            ${stop.name}
+          </p>
+          ${isEndpoint
+            ? `<span style="font-size:11px;color:#888;">${stop.type}</span>`
+            : `<span style="display:inline-block;padding:1px 8px;border-radius:99px;
+                            background:#2a2a2a;font-size:10px;color:#aaa;
+                            text-transform:capitalize;border:1px solid #333;">
+                 ${stop.type}
+               </span>`
+          }
+        </div>
+      </div>
+      <p style="margin:0 0 6px;font-size:11px;color:#888;line-height:1.4;">
+        ${stop.address}
+      </p>
+      ${stop.reason
+        ? `<p style="margin:0 0 10px;font-size:11px;color:#bbb;font-style:italic;line-height:1.4;">
+             "${stop.reason}"
+           </p>`
+        : '<div style="margin-bottom:10px;"></div>'
+      }
+      <a href="${mapsLink}" target="_blank" rel="noopener noreferrer"
+         style="color:#CC0000;font-size:11px;text-decoration:none;font-weight:500;">
+        Open in Google Maps →
+      </a>
+    </div>`
+}
 
 interface MapOverlaysProps {
   plan: TripPlan | null
   directions: DirectionsResult | null
+  highlightedStop: number | null
+  onHighlightClear: () => void
 }
 
-function MapOverlays({ plan, directions }: MapOverlaysProps) {
+function MapOverlays({ plan, directions, highlightedStop, onHighlightClear }: MapOverlaysProps) {
   const map = useMap()
   const geometryLib = useMapsLibrary('geometry')
   const markersRef = useRef<google.maps.Marker[]>([])
   const polylineRef = useRef<google.maps.Polyline | null>(null)
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null)
   const animFrameRef = useRef<number>(0)
+  const allStopsRef = useRef<Array<{ position: google.maps.LatLng | google.maps.LatLngLiteral; infoContent: string }>>([])
 
-  // Draw animated polyline
+  // Animated polyline
   useEffect(() => {
     if (!map || !geometryLib || !directions?.overview_polyline) return
 
@@ -57,23 +107,17 @@ function MapOverlays({ plan, directions }: MapOverlaysProps) {
     })
     polylineRef.current = line
 
-    // Animate the stroke drawing
     const DURATION = 1600
     const start = performance.now()
-
     const animate = (now: number) => {
       const t = Math.min((now - start) / DURATION, 1)
-      const eased = 1 - Math.pow(1 - t, 3) // ease-out cubic
-      const endIdx = Math.max(2, Math.round(eased * fullPath.length))
-      line.setPath(fullPath.slice(0, endIdx))
+      const eased = 1 - Math.pow(1 - t, 3)
+      line.setPath(fullPath.slice(0, Math.max(2, Math.round(eased * fullPath.length))))
       line.setOptions({ strokeOpacity: 0.3 + eased * 0.6 })
-      if (t < 1) {
-        animFrameRef.current = requestAnimationFrame(animate)
-      }
+      if (t < 1) animFrameRef.current = requestAnimationFrame(animate)
     }
     animFrameRef.current = requestAnimationFrame(animate)
 
-    // Fit bounds with padding
     const bounds = new google.maps.LatLngBounds()
     fullPath.forEach(p => bounds.extend(p))
     map.fitBounds(bounds, { top: 80, right: 60, bottom: 80, left: 60 })
@@ -85,7 +129,7 @@ function MapOverlays({ plan, directions }: MapOverlaysProps) {
     }
   }, [map, geometryLib, directions?.overview_polyline])
 
-  // Draw markers with info window on click
+  // Markers + info windows
   useEffect(() => {
     if (!map || !directions?.legs.length || !plan) return
 
@@ -97,36 +141,50 @@ function MapOverlays({ plan, directions }: MapOverlaysProps) {
     infoWindowRef.current = infoWindow
 
     const legs = directions.legs
-    const allStops = [
-      { label: 'A', name: plan.origin.name, address: plan.origin.address, type: 'Start', position: legs[0].start_location },
+    const stopsData = [
+      {
+        label: 'A', name: plan.origin.name, address: plan.origin.address,
+        type: 'Start', reason: undefined,
+        position: legs[0].start_location,
+      },
       ...legs.slice(0, -1).map((leg, i) => ({
         label: String.fromCharCode(66 + i),
         name: plan.waypoints[i]?.name ?? leg.end_address,
         address: plan.waypoints[i]?.address ?? leg.end_address,
         type: plan.waypoints[i]?.type ?? 'stop',
+        reason: plan.waypoints[i]?.reason,
         position: leg.end_location,
       })),
       {
         label: String.fromCharCode(65 + legs.length),
-        name: plan.destination.name,
-        address: plan.destination.address,
-        type: 'End',
+        name: plan.destination.name, address: plan.destination.address,
+        type: 'End', reason: undefined,
         position: legs[legs.length - 1].end_location,
       },
     ]
 
-    markersRef.current = allStops.map(stop => {
-      const isEndpoint = stop.type === 'Start' || stop.type === 'End'
-      const pinColor = isEndpoint ? '#CC0000' : '#1a1a1a'
-      const borderColor = isEndpoint ? '#990000' : '#CC0000'
+    allStopsRef.current = stopsData.map(s => ({
+      position: s.position,
+      infoContent: buildInfoWindowContent(s),
+    }))
 
+    // Close info window when clicking the map
+    map.addListener('click', () => {
+      infoWindow.close()
+      onHighlightClear()
+    })
+
+    markersRef.current = stopsData.map((stop, idx) => {
+      const isEndpoint = stop.type === 'Start' || stop.type === 'End'
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="42" viewBox="0 0 36 42">
-        <filter id="shadow">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.6)"/>
-        </filter>
-        <path d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 24 18 24s18-10.5 18-24C36 8.06 27.94 0 18 0z" fill="${pinColor}" stroke="${borderColor}" stroke-width="1.5" filter="url(#shadow)"/>
+        <filter id="s"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.7)"/></filter>
+        <path d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 24 18 24s18-10.5 18-24C36 8.06 27.94 0 18 0z"
+          fill="${isEndpoint ? '#CC0000' : '#1c1c1c'}"
+          stroke="${isEndpoint ? '#990000' : '#CC0000'}"
+          stroke-width="1.5" filter="url(#s)"/>
         <circle cx="18" cy="17" r="11" fill="${isEndpoint ? '#990000' : '#CC0000'}"/>
-        <text x="18" y="21.5" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="12" font-weight="bold">${stop.label}</text>
+        <text x="18" y="21.5" text-anchor="middle" fill="white"
+          font-family="Arial,sans-serif" font-size="12" font-weight="bold">${stop.label}</text>
       </svg>`
 
       const marker = new google.maps.Marker({
@@ -141,22 +199,8 @@ function MapOverlays({ plan, directions }: MapOverlaysProps) {
         zIndex: isEndpoint ? 20 : 10,
       })
 
-      const svPreviewUrl = `/api/streetview?lat=${stop.position.lat}&lng=${stop.position.lng}&size=320x140`
-
       marker.addListener('click', () => {
-        infoWindow.setContent(`
-          <div style="background:#1a1a1a;color:#f0f0f0;border-radius:8px;overflow:hidden;min-width:240px;max-width:280px;font-family:system-ui,sans-serif;">
-            <div style="position:relative;height:120px;background:#111;overflow:hidden;">
-              <img src="${svPreviewUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<div style=\\'height:120px;display:flex;align-items:center;justify-content:center;color:#555;font-size:12px;\\'>No preview available</div>'" />
-              <div style="position:absolute;top:8px;left:8px;background:#CC0000;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;">${stop.label}</div>
-            </div>
-            <div style="padding:10px 12px;">
-              <p style="margin:0 0 3px;font-weight:600;font-size:13px;line-height:1.3;">${stop.name}</p>
-              <p style="margin:0;font-size:11px;color:#888;line-height:1.4;">${stop.address}</p>
-              ${stop.type !== 'Start' && stop.type !== 'End' ? `<span style="display:inline-block;margin-top:6px;padding:2px 8px;border-radius:99px;background:#2a2a2a;font-size:10px;color:#aaa;text-transform:capitalize;">${stop.type}</span>` : ''}
-            </div>
-          </div>
-        `)
+        infoWindow.setContent(allStopsRef.current[idx].infoContent)
         infoWindow.open(map, marker)
       })
 
@@ -167,17 +211,28 @@ function MapOverlays({ plan, directions }: MapOverlaysProps) {
       markersRef.current.forEach(m => m.setMap(null))
       markersRef.current = []
       infoWindow.close()
+      google.maps.event.clearListeners(map, 'click')
     }
-  }, [map, directions?.legs, plan])
+  }, [map, directions?.legs, plan, onHighlightClear])
+
+  // Trigger info window from sidebar "Map" button
+  useEffect(() => {
+    if (highlightedStop == null || !map) return
+    const marker = markersRef.current[highlightedStop]
+    const stopData = allStopsRef.current[highlightedStop]
+    if (marker && stopData && infoWindowRef.current) {
+      infoWindowRef.current.setContent(stopData.infoContent)
+      infoWindowRef.current.open(map, marker)
+      map.panTo(marker.getPosition()!)
+    }
+  }, [highlightedStop, map])
 
   return null
 }
 
 function MapTypeController({ mapType }: { mapType: string }) {
   const map = useMap()
-  useEffect(() => {
-    if (map) map.setMapTypeId(mapType)
-  }, [map, mapType])
+  useEffect(() => { if (map) map.setMapTypeId(mapType) }, [map, mapType])
   return null
 }
 
@@ -185,9 +240,11 @@ interface Props {
   plan: TripPlan | null
   directions: DirectionsResult | null
   isLoading: boolean
+  highlightedStop: number | null
+  onHighlightClear: () => void
 }
 
-export function RouteMap({ plan, directions, isLoading }: Props) {
+export function RouteMap({ plan, directions, isLoading, highlightedStop, onHighlightClear }: Props) {
   const [mapType, setMapType] = useState<'roadmap' | 'satellite'>('roadmap')
 
   return (
@@ -205,24 +262,28 @@ export function RouteMap({ plan, directions, isLoading }: Props) {
         className="w-full h-full"
       >
         <MapTypeController mapType={mapType} />
-        <MapOverlays plan={plan} directions={directions} />
+        <MapOverlays
+          plan={plan}
+          directions={directions}
+          highlightedStop={highlightedStop}
+          onHighlightClear={onHighlightClear}
+        />
       </Map>
 
       {/* Map type toggle */}
       <div className="absolute top-3 left-3 z-10">
         <button
-          onClick={() => setMapType(t => (t === 'roadmap' ? 'satellite' : 'roadmap'))}
+          onClick={() => setMapType(t => t === 'roadmap' ? 'satellite' : 'roadmap')}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/80 backdrop-blur-sm border border-white/10 text-white text-xs font-medium hover:bg-black/90 transition-colors shadow-lg"
         >
-          {mapType === 'roadmap' ? (
-            <><Layers className="w-3.5 h-3.5" /> Satellite</>
-          ) : (
-            <><MapIcon className="w-3.5 h-3.5" /> Road</>
-          )}
+          {mapType === 'roadmap'
+            ? <><Layers className="w-3.5 h-3.5" /> Satellite</>
+            : <><MapIcon className="w-3.5 h-3.5" /> Road</>
+          }
         </button>
       </div>
 
-      {/* Directions loading overlay */}
+      {/* Route calculating overlay */}
       {isLoading && (
         <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center pointer-events-none">
           <div className="flex flex-col items-center gap-3">
@@ -232,7 +293,7 @@ export function RouteMap({ plan, directions, isLoading }: Props) {
         </div>
       )}
 
-      {/* Empty state */}
+      {/* Empty state hint */}
       {!plan && !isLoading && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-none">
           <div className="px-4 py-2 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 text-sm text-muted-foreground whitespace-nowrap">

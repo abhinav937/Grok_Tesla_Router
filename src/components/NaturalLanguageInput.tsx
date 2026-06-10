@@ -2,12 +2,12 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, Navigation } from 'lucide-react'
+import { Loader2, Navigation, RotateCcw } from 'lucide-react'
 
 const EXAMPLES = [
-  'Madison WI to Austin TX, BBQ stop in Kansas City, scenic through Texas Hill Country',
-  'San Francisco to Portland OR, coastal Hwy 1, wine country near Napa',
-  'Chicago to Denver, stop in Omaha for food, keep drive under 10 hours total',
+  'Madison WI to Austin TX, max 9 hours driving per day, BBQ stop in Kansas City, scenic through Texas Hill Country',
+  'San Francisco to Portland OR, coastal Hwy 1, quick food stops only, avoid big cities',
+  'Chicago to Nashville, only roadside BBQ joints, keep total drive under 8 hours',
 ]
 
 interface Props {
@@ -30,11 +30,23 @@ export function NaturalLanguageInput({ onSubmit, isLoading, error, onReset }: Pr
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-full bg-[#CC0000] flex items-center justify-center shrink-0">
-          <Navigation className="w-4 h-4 text-white" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-[#CC0000] flex items-center justify-center shrink-0">
+            <Navigation className="w-4 h-4 text-white" />
+          </div>
+          <h1 className="text-lg font-bold tracking-tight">Tesla Trip Planner</h1>
         </div>
-        <h1 className="text-lg font-bold tracking-tight">Tesla Trip Planner</h1>
+        {onReset && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <RotateCcw className="w-3 h-3" />
+            New trip
+          </button>
+        )}
       </div>
 
       <Textarea
@@ -50,41 +62,35 @@ export function NaturalLanguageInput({ onSubmit, isLoading, error, onReset }: Pr
         }}
       />
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
-
-      <div className="flex gap-2">
-        <Button
-          type="submit"
-          disabled={!prompt.trim() || isLoading}
-          className="flex-1 bg-[#CC0000] hover:bg-[#8B0000] text-white"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Planning Route…
-            </>
-          ) : (
-            <>
-              <Navigation className="w-4 h-4 mr-2" />
-              Plan My Trip
-            </>
+      {error && (
+        <p className="text-sm text-red-400 flex items-center gap-1.5">
+          {error}
+          {onReset && (
+            <button type="button" onClick={onReset} className="underline hover:no-underline">
+              Try again
+            </button>
           )}
-        </Button>
-        {onReset && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onReset}
-            className="shrink-0"
-          >
-            Reset
-          </Button>
-        )}
-      </div>
+        </p>
+      )}
 
-      <p className="text-xs text-muted-foreground">
-        Tip: Describe your trip naturally. Include preferences like food stops, scenic routes, or charging needs.
-        Press <kbd className="px-1 py-0.5 bg-secondary rounded text-[10px]">⌘↵</kbd> to submit.
+      <Button
+        type="submit"
+        disabled={!prompt.trim() || isLoading}
+        className="w-full h-11 bg-[#CC0000] hover:bg-[#8B0000] text-white text-sm font-semibold"
+      >
+        {isLoading ? (
+          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Planning Route…</>
+        ) : (
+          <><Navigation className="w-4 h-4 mr-2" />Plan My Trip</>
+        )}
+      </Button>
+
+      <p className="text-[11px] text-muted-foreground leading-snug">
+        Add constraints like <span className="text-foreground/70">"max 9h/day"</span>,{' '}
+        <span className="text-foreground/70">"only food stops"</span>,{' '}
+        <span className="text-foreground/70">"scenic route"</span>, or{' '}
+        <span className="text-foreground/70">"avoid highways"</span>.
+        Press <kbd className="px-1 py-px bg-secondary rounded text-[10px]">⌘↵</kbd> to submit.
       </p>
     </form>
   )
