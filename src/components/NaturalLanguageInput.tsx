@@ -99,7 +99,7 @@ export function NaturalLanguageInput({ onSubmit, isLoading, error, onReset }: Pr
             {isLoading ? (
               <>Planning… <Loader2 className="w-4 h-4 animate-spin" /></>
             ) : (
-              <>Plan route <ArrowRight className="w-4 h-4" />
+              <>Plan route <ArrowRight className="w-4 h-4" /></>
             )}
           </button>
         </div>
