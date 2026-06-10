@@ -22,7 +22,7 @@ const planTripTool = {
   type: 'function' as const,
   function: {
     name: 'plan_road_trip',
-    description: 'Return a structured road trip plan with ordered stops.',
+    description: 'Return a structured road trip plan with ordered stops. Respect user constraints on daily driving time, stop types, and preferences.',
     parameters: {
       type: 'object',
       required: ['origin', 'destination', 'waypoints', 'trip_notes', 'total_estimated_hours'],
@@ -58,14 +58,25 @@ const planTripTool = {
   },
 }
 
-const SYSTEM_PROMPT = `You are an expert road trip planner. Parse the user's trip request and call plan_road_trip.
+const SYSTEM_PROMPT = `You are a practical and experienced road trip planner specialized in Tesla / EV trips.
 
-Rules:
-- Provide full, geocodable US addresses ("City, State" minimum, full street address for specific venues)
-- Order waypoints geographically to minimize backtracking
-- Include 2-6 stops that genuinely add value (food, attractions, scenery, rest)
-- detour_minutes is the extra time for detouring to this stop (0 if on the main route)
-- trip_notes: 2-4 practical tips about timing, traffic, highlights, or must-sees along the way`
+Your job is to turn the user's natural language request into a realistic, enjoyable, and practical route plan.
+
+Key rules:
+- **Respect user constraints strictly**: If the user says "max 9 hours driving per day", "only food and rest stops", "no scenic detours", "avoid tolls", "I want BBQ stops", etc., follow those instructions exactly. User overrides always win.
+- **Daily driving realism**: For long trips, aim for 8–12 hours of actual driving per logical day. If the total trip is longer, space stops so each day stays comfortable. You can suggest overnight locations in trip_notes.
+- **Stop selection logic**:
+  • Food stops: Prioritize good local spots (diners, BBQ, unique restaurants).
+  • Rest stops: Quick, convenient places with facilities or nice short breaks.
+  • Scenic / attraction stops: Only include if the user asks for them or they add very little extra time.
+  • Number of stops: Be practical — roughly one meaningful stop every 2–3 hours of driving. Do not create an overwhelming list.
+- Always return full, real-sounding, easily geocodable addresses ("City, State" minimum; full street when possible for specific places).
+- Order all waypoints geographically to minimize backtracking.
+- For every stop, write a short, helpful "reason" explaining why it's worth stopping.
+- detour_minutes should be an honest estimate of extra time added.
+- trip_notes: 2–5 practical bullets about timing, traffic, highlights, or tips.
+
+The user can override everything in their prompt — treat their specific instructions as the highest priority.`
 
 type StreamEvent =
   | { type: 'thinking'; text: string }
@@ -91,8 +102,7 @@ export async function POST(req: NextRequest) {
         if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 5) {
           send({ type: 'error', error: 'A trip description is required' })
           controller.close()
-          return
-        }
+          return }
 
         const grok = getGrokClient()
 
@@ -138,8 +148,7 @@ export async function POST(req: NextRequest) {
         if (!toolArgsBuffer) {
           send({ type: 'error', error: 'Model did not return a plan. Try rephrasing.' })
           controller.close()
-          return
-        }
+          return }
 
         let rawArgs: unknown
         try {
@@ -147,15 +156,13 @@ export async function POST(req: NextRequest) {
         } catch {
           send({ type: 'error', error: 'AI returned malformed data' })
           controller.close()
-          return
-        }
+          return }
 
         const parsed = TripPlanSchema.safeParse(rawArgs)
         if (!parsed.success) {
           send({ type: 'error', error: 'Plan validation failed — try again' })
           controller.close()
-          return
-        }
+          return }
 
         send({
           type: 'tool_call',
