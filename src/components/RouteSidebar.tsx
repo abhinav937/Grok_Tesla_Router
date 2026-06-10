@@ -6,7 +6,7 @@ import { TeslaShareButton } from './TeslaShareButton'
 import { ThinkingTrace } from './ThinkingTrace'
 import { buildGoogleMapsUrl } from '@/lib/maps'
 import type { TripPlan, DirectionsResult, TripPlanUsage, TripPlanToolCall, RouteLeg } from '@/lib/types'
-import { Clock, RouteIcon, Info, Sunrise } from 'lucide-react'
+import { Info, Sunrise } from 'lucide-react'
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -51,16 +51,15 @@ function TripSummaryHeader({ plan, directions }: { plan: TripPlan; directions: D
   const stopCount = plan.waypoints.length
 
   return (
-    <div className="rounded-lg border border-border bg-card px-4 py-3">
-      <div className="flex items-baseline gap-1.5 mb-1">
-        <span className="text-2xl font-bold tracking-tight">{miles} mi</span>
-        <span className="text-muted-foreground text-lg">·</span>
-        <span className="text-2xl font-bold tracking-tight">{driveTime}</span>
+    <div className="rounded-xl bg-white shadow-google px-4 py-3.5">
+      <div className="flex items-baseline gap-2 mb-1">
+        <span className="text-[22px] font-medium tracking-tight text-[#1a73e8]">{driveTime}</span>
+        <span className="text-[15px] text-[#5f6368]">({miles} mi)</span>
       </div>
-      <p className="text-xs text-muted-foreground leading-snug">
-        <span className="text-foreground/80 font-medium">{plan.origin.name}</span>
+      <p className="text-[13px] text-[#5f6368] leading-snug">
+        <span className="text-[#202124] font-medium">{plan.origin.name}</span>
         {' → '}
-        <span className="text-foreground/80 font-medium">{plan.destination.name}</span>
+        <span className="text-[#202124] font-medium">{plan.destination.name}</span>
         {stopCount > 0 && (
           <span> · {stopCount} stop{stopCount !== 1 ? 's' : ''}</span>
         )}
@@ -152,18 +151,18 @@ export function RouteSidebar({
                   <div key={i}>
                     {dayBreak && (
                       <div className="flex items-center gap-2 py-2 mb-1">
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary border border-border">
-                          <Sunrise className="w-3 h-3 text-[#CC0000] shrink-0" />
-                          <span className="text-[11px] font-semibold text-foreground">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#e8f0fe]">
+                          <Sunrise className="w-3 h-3 text-[#1a73e8] shrink-0" />
+                          <span className="text-[11px] font-medium text-[#1a73e8]">
                             Day {dayBreak.dayNum}
                           </span>
                           {dayBreak.dayDurationSeconds > 0 && (
-                            <span className="text-[11px] text-muted-foreground">
+                            <span className="text-[11px] text-[#1a73e8]/80">
                               · ~{formatDuration(dayBreak.dayDurationSeconds)} driving
                             </span>
                           )}
                         </div>
-                        <div className="flex-1 h-px bg-border" />
+                        <div className="flex-1 h-px bg-[#dadce0]" />
                       </div>
                     )}
                     <StopCard
@@ -180,15 +179,15 @@ export function RouteSidebar({
 
             {/* Trip notes */}
             {plan.trip_notes.length > 0 && (
-              <div className="bg-secondary rounded-lg px-3 py-3 space-y-1.5">
+              <div className="bg-[#e8f0fe] rounded-xl px-3.5 py-3 space-y-1.5">
                 <div className="flex items-center gap-2 mb-2">
-                  <Info className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-400">
+                  <Info className="w-3.5 h-3.5 text-[#1a73e8] shrink-0" />
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-[#1a73e8]">
                     Trip Notes
                   </p>
                 </div>
                 {plan.trip_notes.map((note, i) => (
-                  <p key={i} className="text-xs text-muted-foreground leading-snug">
+                  <p key={i} className="text-[13px] text-[#3c4043] leading-snug">
                     • {note}
                   </p>
                 ))}

@@ -1,11 +1,11 @@
 {
   "name": "Tesla Trip Planner",
   "short_name": "TeslaTrip",
-  "description": "AI-powered EV road trip planner for Tesla Model 3",
+  "description": "AI-powered road trip planner with a Google Maps experience",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#CC0000",
+  "background_color": "#ffffff",
+  "theme_color": "#1a73e8",
   "orientation": "any",
   "icons": [
     {

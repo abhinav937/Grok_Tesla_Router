@@ -1,17 +1,21 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Roboto } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/Providers'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
+const roboto = Roboto({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-sans',
+})
 
 export const metadata: Metadata = {
   title: 'Tesla Trip Planner',
-  description: 'AI-powered EV road trip planner for Tesla Model 3',
+  description: 'AI-powered road trip planner with a Google Maps experience',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    statusBarStyle: 'default',
     title: 'TeslaTrip',
   },
   other: {
@@ -20,7 +24,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#CC0000',
+  themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -28,11 +32,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
       </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${roboto.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>

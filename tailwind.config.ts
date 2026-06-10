@@ -12,6 +12,18 @@ const config: Config = {
     extend: {
       colors: {
         tesla: { red: '#CC0000', dark: '#8B0000' },
+        google: {
+          blue: '#1a73e8',
+          'blue-dark': '#1765cc',
+          'blue-light': '#e8f0fe',
+          red: '#ea4335',
+          green: '#1e8e3e',
+          yellow: '#f9ab00',
+          gray: '#5f6368',
+          surface: '#f1f3f4',
+          border: '#dadce0',
+          text: '#202124',
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

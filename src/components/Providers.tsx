@@ -21,12 +21,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
         position="bottom-center"
         toastOptions={{
           style: {
-            background: '#1a1a1a',
-            color: '#f2f2f2',
-            border: '1px solid #262626',
+            background: '#202124',
+            color: '#ffffff',
+            borderRadius: '8px',
+            fontSize: '14px',
+            padding: '10px 16px',
           },
           success: {
-            iconTheme: { primary: '#CC0000', secondary: '#fff' },
+            iconTheme: { primary: '#1a73e8', secondary: '#fff' },
           },
         }}
       />

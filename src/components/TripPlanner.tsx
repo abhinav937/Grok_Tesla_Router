@@ -15,10 +15,10 @@ export function TripPlanner() {
 
   return (
     <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ''}>
-      <div className="flex flex-col md:flex-row h-[100dvh] bg-background overflow-hidden">
+      <div className="flex flex-col md:flex-row h-[100dvh] bg-white overflow-hidden">
         {/* Sidebar */}
-        <div className="w-full md:w-[420px] md:min-w-[420px] flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-border md:h-full">
-          <div className="p-4 border-b border-border shrink-0">
+        <div className="w-full md:w-[400px] md:min-w-[400px] flex flex-col overflow-hidden bg-white border-b md:border-b-0 md:border-r border-[#e8eaed] md:h-full z-10 md:shadow-google">
+          <div className="p-4 border-b border-[#e8eaed] shrink-0">
             <NaturalLanguageInput
               onSubmit={trip.mutate}
               isLoading={trip.isPending}

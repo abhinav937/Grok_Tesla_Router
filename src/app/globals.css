@@ -4,27 +4,28 @@
 
 @layer base {
   :root {
-    --background: 0 0% 3%;
-    --foreground: 0 0% 95%;
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 0 100% 40%;
+    /* Google Maps light theme */
+    --background: 0 0% 100%;
+    --foreground: 225 6% 13%;          /* #202124 */
+    --card: 0 0% 100%;
+    --card-foreground: 225 6% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 6% 13%;
+    --primary: 214 82% 51%;            /* #1a73e8 Google Blue */
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 95%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 100% 40%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 0 100% 40%;
+    --secondary: 204 12% 95%;          /* #f1f3f4 */
+    --secondary-foreground: 225 6% 13%;
+    --muted: 204 12% 95%;
+    --muted-foreground: 220 5% 39%;    /* #5f6368 */
+    --accent: 217 89% 95%;             /* #e8f0fe light blue */
+    --accent-foreground: 214 82% 51%;
+    --destructive: 4 71% 50%;          /* #d93025 Google red */
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 7% 87%;              /* #dadce0 */
+    --input: 220 7% 87%;
+    --ring: 214 82% 51%;
     --radius: 0.5rem;
-    color-scheme: dark;
+    color-scheme: light;
   }
 }
 
@@ -37,14 +38,30 @@
   }
 }
 
-/* Smooth scrollbar styling */
+@layer components {
+  /* Google's signature elevation shadows */
+  .shadow-google {
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3),
+                0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  }
+  .shadow-google-lg {
+    box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3),
+                0 4px 8px 3px rgba(60, 64, 67, 0.15);
+  }
+}
+
+/* Thin Google-style scrollbar */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 2px;
+  background: #dadce0;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #bdc1c6;
 }
